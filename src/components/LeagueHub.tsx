@@ -5,8 +5,10 @@ import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import LaPorritaView, { type LMatch } from "@/components/LaPorritaView";
 import LeagueActions from "@/components/LeagueActions";
+import ChatTab from "@/components/ChatTab";
 import { formatDay } from "@/lib/format";
 import { STAGE_LABELS, type Stage, type LeaderboardRow } from "@/lib/types";
+import type { ChatMessage } from "@/lib/chat-actions";
 
 export type PhaseRow = {
   user_id: string;
@@ -40,9 +42,15 @@ type League = {
   memberCount: number;
 };
 
-const TABS = ["ranking", "porrita", "mundial", "calendario"] as const;
+const TABS = ["ranking", "porrita", "mundial", "calendario", "chat"] as const;
 type Tab = (typeof TABS)[number];
-const TAB_ICON: Record<Tab, string> = { ranking: "📊", porrita: "⚽", mundial: "🏆", calendario: "📅" };
+const TAB_ICON: Record<Tab, string> = {
+  ranking: "📊",
+  porrita: "⚽",
+  mundial: "🏆",
+  calendario: "📅",
+  chat: "💬",
+};
 const STAGE_ORDER: Stage[] = ["group", "r32", "r16", "qf", "sf", "third", "final"];
 
 export default function LeagueHub({
@@ -54,6 +62,7 @@ export default function LeagueHub({
   matches,
   teamsByGroup,
   standings,
+  initialMessages,
 }: {
   league: League;
   currentUserId: string;
@@ -63,6 +72,7 @@ export default function LeagueHub({
   matches: LMatch[];
   teamsByGroup: Record<string, { flag: string; name: string }[]>;
   standings: GroupStanding[];
+  initialMessages: ChatMessage[];
 }) {
   const t = useTranslations("hub");
   const [tab, setTab] = useState<Tab>("porrita");
@@ -129,6 +139,14 @@ export default function LeagueHub({
         {tab === "porrita" && <LaPorritaView matches={matches} teamsByGroup={teamsByGroup} />}
         {tab === "mundial" && <MundialTab standings={standings} matches={matches} />}
         {tab === "calendario" && <CalendarioTab matches={matches} />}
+        {tab === "chat" && (
+          <ChatTab
+            leagueId={league.id}
+            currentUserId={currentUserId}
+            members={leaderboard.map((r) => ({ id: r.user_id, name: r.name || r.email }))}
+            initialMessages={initialMessages}
+          />
+        )}
       </div>
     </div>
   );

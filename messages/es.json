@@ -72,6 +72,7 @@
     "owner": "Creador",
     "reminderTitle": "Te faltan {count} pronósticos",
     "reminderBody": "para partidos de las próximas horas. ¡No te quedes sin puntuar!",
+    "rules": "Reglas y puntuación",
     "yourLeagues": "Tus ligas",
     "newLeague": "+ Nueva liga",
     "noLeagues": "Aún no estás en ninguna liga. Crea una o únete con un código.",
@@ -136,6 +137,10 @@
     "worldCupStatus": "Estado del Mundial",
     "matchesPlayed": "partidos jugados",
     "group": "Grupo"
+  },
+  "chat": {
+    "empty": "Aún no hay mensajes. ¡Rompe el hielo! 👋",
+    "placeholder": "Escribe un mensaje… usa @ para mencionar"
   },
   "porrita": {
     "predictions": "predicciones",
@@ -203,6 +208,8 @@
     "invalid_score": "Marcador no válido.",
     "save_failed": "No se pudo guardar. Inténtalo de nuevo.",
     "tournament_started": "El Mundial ya empezó: los picks están cerrados.",
-    "update_failed": "No se pudo actualizar."
+    "update_failed": "No se pudo actualizar.",
+    "empty_message": "Escribe algo antes de enviar.",
+    "message_too_long": "El mensaje es demasiado largo."
   }
 }

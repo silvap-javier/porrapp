@@ -5,6 +5,7 @@ import { sideLabel } from "@/lib/format";
 import type { LeaderboardRow, Stage, Team } from "@/lib/types";
 import type { LMatch } from "@/components/LaPorritaView";
 import type { GroupStanding, PhaseRow } from "@/components/LeagueHub";
+import type { ChatMessage } from "@/lib/chat-actions";
 
 type MatchRow = {
   id: string;
@@ -41,7 +42,7 @@ export default async function LeaguePage({
     .maybeSingle();
   if (!league) notFound();
 
-  const [{ data: board }, { data: breakdown }, { data: members }, { data: matchesData }, { data: preds }, { data: teamsData }] =
+  const [{ data: board }, { data: breakdown }, { data: members }, { data: matchesData }, { data: preds }, { data: teamsData }, { data: msgs }] =
     await Promise.all([
       supabase.rpc("league_leaderboard", { p_league_id: id }),
       supabase.rpc("league_phase_breakdown", { p_league_id: id }),
@@ -56,6 +57,12 @@ export default async function LeaguePage({
         .order("match_number", { ascending: true }),
       supabase.from("match_predictions").select("match_id, home_score, away_score").eq("user_id", user.id),
       supabase.from("teams").select("name, flag_emoji, group_letter").order("name", { ascending: true }),
+      supabase
+        .from("league_messages")
+        .select("id, user_id, body, created_at")
+        .eq("league_id", id)
+        .order("created_at", { ascending: true })
+        .limit(50),
     ]);
 
   const rows = (matchesData ?? []) as unknown as MatchRow[];
@@ -143,6 +150,7 @@ export default async function LeaguePage({
       matches={matches}
       teamsByGroup={teamsByGroup}
       standings={standings}
+      initialMessages={(msgs ?? []) as ChatMessage[]}
     />
   );
 }

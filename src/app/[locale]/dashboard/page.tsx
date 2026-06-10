@@ -157,6 +157,14 @@ export default async function DashboardPage() {
           <JoinLeagueForm />
         </div>
       </section>
+
+      <Link
+        href="/reglas"
+        className="flex items-center justify-between bg-surface border border-border rounded-2xl p-4 hover:border-primary/40 transition-colors"
+      >
+        <span className="text-sm font-medium text-foreground">📖 {t("rules")}</span>
+        <span className="text-muted">›</span>
+      </Link>
     </div>
   );
 }
