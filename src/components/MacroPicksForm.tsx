@@ -4,16 +4,20 @@ import { useState, useTransition } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { saveMacroPicks } from "@/lib/picks-actions";
+import PlayerCombobox from "./PlayerCombobox";
+import type { FlatPlayer } from "@/lib/group-players";
 import type { Team } from "@/lib/types";
 
 export default function MacroPicksForm({
   teams,
+  players,
   initialChampion,
   initialRunnerup,
   initialTopScorer,
   locked,
 }: {
   teams: Team[];
+  players: FlatPlayer[];
   initialChampion: string | null;
   initialRunnerup: string | null;
   initialTopScorer: string | null;
@@ -106,17 +110,15 @@ export default function MacroPicksForm({
         <label className="block text-sm font-medium text-foreground mb-1">
           {t("topScorer")} <span className="text-xs text-muted">· 5 {t("pts")}</span>
         </label>
-        <input
-          type="text"
+        <PlayerCombobox
+          players={players}
           value={topScorer}
           disabled={locked || isPending}
-          maxLength={80}
-          onChange={(e) => {
-            setTopScorer(e.target.value);
+          placeholder={t("topScorerPlaceholder")}
+          onChange={(v) => {
+            setTopScorer(v);
             if (saved) setSaved(false);
           }}
-          className="w-full px-4 py-2.5 rounded-xl border border-border bg-surface disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
-          placeholder={t("topScorerPlaceholder")}
         />
       </div>
 

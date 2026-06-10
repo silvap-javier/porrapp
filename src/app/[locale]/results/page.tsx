@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import OutcomeForm from "@/components/OutcomeForm";
 import ResultsView, { type ViewResult } from "@/components/ResultsView";
 import GroupScorerForm from "@/components/GroupScorerForm";
-import { buildGroupPlayers, type PlayerRow } from "@/lib/group-players";
+import { buildGroupPlayers, flatPlayers, type PlayerRow } from "@/lib/group-players";
 import { sideLabel } from "@/lib/format";
 import type { Stage, Team } from "@/lib/types";
 
@@ -76,7 +76,9 @@ export default async function ResultsPage() {
     .from("players")
     .select("id, name, position, team:teams(name, group_letter, flag_emoji)")
     .order("name", { ascending: true });
-  const groupPlayers = buildGroupPlayers((playersData ?? []) as unknown as PlayerRow[]);
+  const playerRows = (playersData ?? []) as unknown as PlayerRow[];
+  const groupPlayers = buildGroupPlayers(playerRows);
+  const allPlayers = flatPlayers(playerRows);
 
   const { data: scorers } = await supabase
     .from("group_top_scorer")
@@ -100,6 +102,7 @@ export default async function ResultsPage() {
         <h2 className="font-semibold text-foreground">{t("tournamentOutcome")}</h2>
         <OutcomeForm
           teams={teams}
+          players={allPlayers}
           initialChampion={outcome?.champion_team_id ?? null}
           initialRunnerup={outcome?.runnerup_team_id ?? null}
           initialTopScorer={outcome?.top_scorer ?? null}

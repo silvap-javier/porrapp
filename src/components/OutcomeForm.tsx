@@ -4,15 +4,19 @@ import { useState, useTransition } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { setTournamentOutcome } from "@/lib/match-actions";
+import PlayerCombobox from "./PlayerCombobox";
+import type { FlatPlayer } from "@/lib/group-players";
 import type { Team } from "@/lib/types";
 
 export default function OutcomeForm({
   teams,
+  players,
   initialChampion,
   initialRunnerup,
   initialTopScorer,
 }: {
   teams: Team[];
+  players: FlatPlayer[];
   initialChampion: string | null;
   initialRunnerup: string | null;
   initialTopScorer: string | null;
@@ -81,13 +85,11 @@ export default function OutcomeForm({
         </div>
         <div>
           <label className="block text-sm font-medium text-foreground mb-1">{t("topScorer")}</label>
-          <input
-            type="text"
+          <PlayerCombobox
+            players={players}
             value={topScorer}
-            maxLength={80}
-            onChange={(e) => setTopScorer(e.target.value)}
-            className="w-full px-3 py-2 rounded-xl border border-border bg-surface focus:outline-none focus:ring-2 focus:ring-primary/50"
             placeholder="—"
+            onChange={setTopScorer}
           />
         </div>
       </div>

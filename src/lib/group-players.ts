@@ -30,3 +30,17 @@ export function buildGroupPlayers(rows: PlayerRow[]): GroupPlayersData[] {
     .sort()
     .map((letter) => ({ letter, teams: Array.from(byGroup.get(letter)!.values()) }));
 }
+
+export type FlatPlayer = { name: string; team: string; flag: string; position: string | null };
+
+/** Lista plana de jugadores (todas las selecciones) para el buscador de goleador del torneo. */
+export function flatPlayers(rows: PlayerRow[]): FlatPlayer[] {
+  return rows
+    .map((p) => ({
+      name: p.name,
+      team: p.team?.name ?? "",
+      flag: p.team?.flag_emoji ?? "",
+      position: p.position,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}

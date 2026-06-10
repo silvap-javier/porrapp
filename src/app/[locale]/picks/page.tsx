@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import MacroPicksForm from "@/components/MacroPicksForm";
 import GroupPositionsForm from "@/components/GroupPositionsForm";
 import GroupScorerForm from "@/components/GroupScorerForm";
-import { buildGroupPlayers, type PlayerRow } from "@/lib/group-players";
+import { buildGroupPlayers, flatPlayers, type PlayerRow } from "@/lib/group-players";
 import type { Team } from "@/lib/types";
 
 export default async function PicksPage() {
@@ -52,7 +52,9 @@ export default async function PicksPage() {
     .from("players")
     .select("id, name, position, team:teams(name, group_letter, flag_emoji)")
     .order("name", { ascending: true });
-  const groupPlayers = buildGroupPlayers((playersData ?? []) as unknown as PlayerRow[]);
+  const playerRows = (playersData ?? []) as unknown as PlayerRow[];
+  const groupPlayers = buildGroupPlayers(playerRows);
+  const allPlayers = flatPlayers(playerRows);
 
   const { data: pichichiPicks } = await supabase
     .from("group_top_scorer_predictions")
@@ -75,6 +77,7 @@ export default async function PicksPage() {
         <h2 className="text-lg font-semibold text-foreground">{t("tournamentSection")}</h2>
         <MacroPicksForm
           teams={teams}
+          players={allPlayers}
           initialChampion={mine?.champion_team_id ?? null}
           initialRunnerup={mine?.runnerup_team_id ?? null}
           initialTopScorer={mine?.top_scorer ?? null}
