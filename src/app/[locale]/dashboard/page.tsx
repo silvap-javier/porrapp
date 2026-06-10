@@ -114,6 +114,17 @@ export default async function DashboardPage() {
         </div>
       </div>
 
+      {/* Accesos rápidos */}
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold text-foreground px-1">{t("quickAccess")}</h2>
+        <div className="grid grid-cols-2 gap-2">
+          <Tile href="/picks" emoji="🎯" title={t("tilePicks")} desc={t("tilePicksDesc")} />
+          <Tile href="/matches" emoji="⚽" title={t("tileMatches")} desc={t("tileMatchesDesc")} />
+          <Tile href="/resultados" emoji="📋" title={t("tileResults")} desc={t("tileResultsDesc")} />
+          <Tile href="/reglas" emoji="📖" title={t("rules")} desc={t("tileRulesDesc")} />
+        </div>
+      </section>
+
       {/* Ligas */}
       <section className="space-y-3">
         <div className="flex items-center justify-between px-1">
@@ -156,17 +167,6 @@ export default async function DashboardPage() {
         <div className="bg-surface border border-border rounded-2xl p-4">
           <p className="text-sm font-medium text-foreground mb-2">{t("joinLeague")}</p>
           <JoinLeagueForm />
-        </div>
-      </section>
-
-      {/* Accesos rápidos */}
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-foreground px-1">{t("quickAccess")}</h2>
-        <div className="grid grid-cols-2 gap-2">
-          <Tile href="/picks" emoji="🎯" title={t("tilePicks")} desc={t("tilePicksDesc")} />
-          <Tile href="/matches" emoji="⚽" title={t("tileMatches")} desc={t("tileMatchesDesc")} />
-          <Tile href="/resultados" emoji="📋" title={t("tileResults")} desc={t("tileResultsDesc")} />
-          <Tile href="/reglas" emoji="📖" title={t("rules")} desc={t("tileRulesDesc")} />
         </div>
       </section>
     </div>

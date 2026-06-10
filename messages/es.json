@@ -210,7 +210,7 @@
     "first": "1º",
     "second": "2º",
     "group": "Grupo",
-    "lockedNotice": "El Mundial ya empezó: los picks de torneo están cerrados.",
+    "lockedNotice": "Los picks de torneo ya están cerrados (60 min antes del primer partido).",
     "save": "Guardar picks",
     "saving": "Guardando…",
     "saved": "Guardado"
@@ -233,7 +233,7 @@
     "match_locked": "Los pronósticos de este partido ya están cerrados.",
     "invalid_score": "Marcador no válido.",
     "save_failed": "No se pudo guardar. Inténtalo de nuevo.",
-    "tournament_started": "El Mundial ya empezó: los picks están cerrados.",
+    "tournament_started": "Los picks de torneo ya están cerrados.",
     "update_failed": "No se pudo actualizar.",
     "empty_message": "Escribe algo antes de enviar.",
     "message_too_long": "El mensaje es demasiado largo."
