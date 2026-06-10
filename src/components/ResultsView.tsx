@@ -17,6 +17,7 @@ export type ViewResult = {
   away_score: number | null;
   home: Side;
   away: Side;
+  venue: string | null;
   setByName: string | null;
 };
 
@@ -150,6 +151,7 @@ export default function ResultsView({ matches }: { matches: ViewResult[] }) {
               homeScore={m.home_score}
               awayScore={m.away_score}
               setByName={m.setByName}
+              venue={m.venue}
             />
           </div>
         ))}

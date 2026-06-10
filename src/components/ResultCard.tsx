@@ -17,6 +17,7 @@ export default function ResultCard({
   homeScore,
   awayScore,
   setByName,
+  venue,
 }: {
   matchId: string;
   home: Side;
@@ -26,6 +27,7 @@ export default function ResultCard({
   homeScore: number | null;
   awayScore: number | null;
   setByName: string | null;
+  venue?: string | null;
 }) {
   const t = useTranslations("results");
   const tErr = useTranslations("errors");
@@ -65,7 +67,10 @@ export default function ResultCard({
   return (
     <div className="bg-surface border border-border rounded-2xl p-4 shadow-[var(--shadow-warm)]">
       <div className="flex items-center justify-between mb-3">
-        <span className="text-xs text-muted">{formatKickoff(kickoffAt)}</span>
+        <span className="text-xs text-muted">
+          {formatKickoff(kickoffAt)}
+          {venue ? ` · ${venue}` : ""}
+        </span>
         {status === "finished" ? (
           <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">
             {t("finished")}

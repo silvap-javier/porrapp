@@ -1,6 +1,6 @@
 -- ============================================================================
--- PorrApp — schema completo (001→007 combinadas). Pegar en el SQL Editor de
--- Supabase y ejecutar (Run). Idempotente: se puede re-ejecutar sin romper.
+-- PorrApp — schema completo (001→008). Pegar en el SQL Editor de Supabase.
+-- Idempotente: re-ejecutable. 008 fija el fixture OFICIAL de FIFA.
 -- ============================================================================
 
 
@@ -834,4 +834,185 @@ BEGIN
 
   RAISE NOTICE 'PorrApp reseed completo: 48 equipos, % partidos.', mnum;
 END $$;
+
+
+-- >>>>>>>>>>>>>>>>>>>>>>>>>>>>  008_real_fixture.sql  <<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+-- ============================================================================
+-- PorrApp — 008_real_fixture
+-- Fixture OFICIAL del Mundial 2026 (FIFA, calendario definitivo 6-dic-2025).
+-- Autocontenida: fija los 48 equipos y reconstruye los 104 partidos con sede,
+-- match_number oficial y kickoff en UTC (la fuente da horarios en ET = UTC-4).
+-- Generada desde fixture.json por scripts/gen-008.js — no editar a mano.
+--
+-- ⚠️  Borra equipos y partidos y los recarga (elimina en cascada pronósticos
+--     y resultados de prueba). Ejecutar durante la puesta a punto.
+-- ============================================================================
+
+ALTER TABLE public.matches ADD COLUMN IF NOT EXISTS venue TEXT;
+
+DELETE FROM public.matches;
+DELETE FROM public.teams;
+
+-- 48 selecciones
+INSERT INTO public.teams (name, code, group_letter, flag_emoji) VALUES
+  ('México', 'MEX', 'A', '🇲🇽'),
+  ('Sudáfrica', 'RSA', 'A', '🇿🇦'),
+  ('Corea del Sur', 'KOR', 'A', '🇰🇷'),
+  ('República Checa', 'CZE', 'A', '🇨🇿'),
+  ('Canadá', 'CAN', 'B', '🇨🇦'),
+  ('Bosnia y Herzegovina', 'BIH', 'B', '🇧🇦'),
+  ('Catar', 'QAT', 'B', '🇶🇦'),
+  ('Suiza', 'SUI', 'B', '🇨🇭'),
+  ('Brasil', 'BRA', 'C', '🇧🇷'),
+  ('Marruecos', 'MAR', 'C', '🇲🇦'),
+  ('Haití', 'HAI', 'C', '🇭🇹'),
+  ('Escocia', 'SCO', 'C', '🏴󠁧󠁢󠁳󠁣󠁴󠁿'),
+  ('Estados Unidos', 'USA', 'D', '🇺🇸'),
+  ('Paraguay', 'PAR', 'D', '🇵🇾'),
+  ('Australia', 'AUS', 'D', '🇦🇺'),
+  ('Turquía', 'TUR', 'D', '🇹🇷'),
+  ('Alemania', 'GER', 'E', '🇩🇪'),
+  ('Curazao', 'CUW', 'E', '🇨🇼'),
+  ('Costa de Marfil', 'CIV', 'E', '🇨🇮'),
+  ('Ecuador', 'ECU', 'E', '🇪🇨'),
+  ('Países Bajos', 'NED', 'F', '🇳🇱'),
+  ('Japón', 'JPN', 'F', '🇯🇵'),
+  ('Suecia', 'SWE', 'F', '🇸🇪'),
+  ('Túnez', 'TUN', 'F', '🇹🇳'),
+  ('Bélgica', 'BEL', 'G', '🇧🇪'),
+  ('Egipto', 'EGY', 'G', '🇪🇬'),
+  ('Irán', 'IRN', 'G', '🇮🇷'),
+  ('Nueva Zelanda', 'NZL', 'G', '🇳🇿'),
+  ('España', 'ESP', 'H', '🇪🇸'),
+  ('Cabo Verde', 'CPV', 'H', '🇨🇻'),
+  ('Arabia Saudí', 'KSA', 'H', '🇸🇦'),
+  ('Uruguay', 'URU', 'H', '🇺🇾'),
+  ('Francia', 'FRA', 'I', '🇫🇷'),
+  ('Senegal', 'SEN', 'I', '🇸🇳'),
+  ('Irak', 'IRQ', 'I', '🇮🇶'),
+  ('Noruega', 'NOR', 'I', '🇳🇴'),
+  ('Argentina', 'ARG', 'J', '🇦🇷'),
+  ('Argelia', 'ALG', 'J', '🇩🇿'),
+  ('Austria', 'AUT', 'J', '🇦🇹'),
+  ('Jordania', 'JOR', 'J', '🇯🇴'),
+  ('Portugal', 'POR', 'K', '🇵🇹'),
+  ('RD Congo', 'COD', 'K', '🇨🇩'),
+  ('Uzbekistán', 'UZB', 'K', '🇺🇿'),
+  ('Colombia', 'COL', 'K', '🇨🇴'),
+  ('Inglaterra', 'ENG', 'L', '🏴󠁧󠁢󠁥󠁮󠁧󠁿'),
+  ('Croacia', 'CRO', 'L', '🇭🇷'),
+  ('Ghana', 'GHA', 'L', '🇬🇭'),
+  ('Panamá', 'PAN', 'L', '🇵🇦');
+
+-- 72 partidos de fase de grupos (equipos por código, kickoff UTC, sede)
+INSERT INTO public.matches (match_number, stage, group_letter, home_team_id, away_team_id, kickoff_at, venue) VALUES
+  (1, 'group', 'A', (SELECT id FROM public.teams WHERE code='MEX'), (SELECT id FROM public.teams WHERE code='RSA'), '2026-06-11T19:00:00.000Z', 'Estadio Ciudad de México'),
+  (2, 'group', 'A', (SELECT id FROM public.teams WHERE code='KOR'), (SELECT id FROM public.teams WHERE code='CZE'), '2026-06-12T02:00:00.000Z', 'Estadio Guadalajara'),
+  (3, 'group', 'B', (SELECT id FROM public.teams WHERE code='CAN'), (SELECT id FROM public.teams WHERE code='BIH'), '2026-06-12T19:00:00.000Z', 'Estadio Toronto'),
+  (4, 'group', 'D', (SELECT id FROM public.teams WHERE code='USA'), (SELECT id FROM public.teams WHERE code='PAR'), '2026-06-13T01:00:00.000Z', 'Estadio Los Ángeles'),
+  (5, 'group', 'B', (SELECT id FROM public.teams WHERE code='QAT'), (SELECT id FROM public.teams WHERE code='SUI'), '2026-06-13T19:00:00.000Z', 'Estadio Bahía de San Francisco'),
+  (6, 'group', 'C', (SELECT id FROM public.teams WHERE code='BRA'), (SELECT id FROM public.teams WHERE code='MAR'), '2026-06-13T22:00:00.000Z', 'Estadio Nueva York Nueva Jersey'),
+  (7, 'group', 'C', (SELECT id FROM public.teams WHERE code='HAI'), (SELECT id FROM public.teams WHERE code='SCO'), '2026-06-14T01:00:00.000Z', 'Estadio Boston'),
+  (8, 'group', 'D', (SELECT id FROM public.teams WHERE code='AUS'), (SELECT id FROM public.teams WHERE code='TUR'), '2026-06-13T04:00:00.000Z', 'Estadio BC Place Vancouver'),
+  (9, 'group', 'E', (SELECT id FROM public.teams WHERE code='GER'), (SELECT id FROM public.teams WHERE code='CUW'), '2026-06-14T17:00:00.000Z', 'Estadio Houston'),
+  (10, 'group', 'F', (SELECT id FROM public.teams WHERE code='NED'), (SELECT id FROM public.teams WHERE code='JPN'), '2026-06-14T20:00:00.000Z', 'Estadio Dallas'),
+  (11, 'group', 'E', (SELECT id FROM public.teams WHERE code='CIV'), (SELECT id FROM public.teams WHERE code='ECU'), '2026-06-14T23:00:00.000Z', 'Estadio Filadelfia'),
+  (12, 'group', 'F', (SELECT id FROM public.teams WHERE code='SWE'), (SELECT id FROM public.teams WHERE code='TUN'), '2026-06-15T02:00:00.000Z', 'Estadio Monterrey'),
+  (13, 'group', 'H', (SELECT id FROM public.teams WHERE code='ESP'), (SELECT id FROM public.teams WHERE code='CPV'), '2026-06-15T16:00:00.000Z', 'Estadio Atlanta'),
+  (14, 'group', 'G', (SELECT id FROM public.teams WHERE code='BEL'), (SELECT id FROM public.teams WHERE code='EGY'), '2026-06-15T19:00:00.000Z', 'Estadio Seattle'),
+  (15, 'group', 'H', (SELECT id FROM public.teams WHERE code='KSA'), (SELECT id FROM public.teams WHERE code='URU'), '2026-06-15T22:00:00.000Z', 'Estadio Miami'),
+  (16, 'group', 'G', (SELECT id FROM public.teams WHERE code='IRN'), (SELECT id FROM public.teams WHERE code='NZL'), '2026-06-16T01:00:00.000Z', 'Estadio Los Ángeles'),
+  (17, 'group', 'I', (SELECT id FROM public.teams WHERE code='FRA'), (SELECT id FROM public.teams WHERE code='SEN'), '2026-06-16T19:00:00.000Z', 'Estadio Nueva York Nueva Jersey'),
+  (18, 'group', 'I', (SELECT id FROM public.teams WHERE code='IRQ'), (SELECT id FROM public.teams WHERE code='NOR'), '2026-06-16T22:00:00.000Z', 'Estadio Boston'),
+  (19, 'group', 'J', (SELECT id FROM public.teams WHERE code='ARG'), (SELECT id FROM public.teams WHERE code='ALG'), '2026-06-17T01:00:00.000Z', 'Estadio Kansas City'),
+  (20, 'group', 'J', (SELECT id FROM public.teams WHERE code='AUT'), (SELECT id FROM public.teams WHERE code='JOR'), '2026-06-16T04:00:00.000Z', 'Estadio Bahía de San Francisco'),
+  (21, 'group', 'K', (SELECT id FROM public.teams WHERE code='POR'), (SELECT id FROM public.teams WHERE code='COD'), '2026-06-17T17:00:00.000Z', 'Estadio Houston'),
+  (22, 'group', 'L', (SELECT id FROM public.teams WHERE code='ENG'), (SELECT id FROM public.teams WHERE code='CRO'), '2026-06-17T20:00:00.000Z', 'Estadio Dallas'),
+  (23, 'group', 'L', (SELECT id FROM public.teams WHERE code='GHA'), (SELECT id FROM public.teams WHERE code='PAN'), '2026-06-17T23:00:00.000Z', 'Estadio Toronto'),
+  (24, 'group', 'K', (SELECT id FROM public.teams WHERE code='UZB'), (SELECT id FROM public.teams WHERE code='COL'), '2026-06-18T02:00:00.000Z', 'Estadio Ciudad de México'),
+  (25, 'group', 'A', (SELECT id FROM public.teams WHERE code='CZE'), (SELECT id FROM public.teams WHERE code='RSA'), '2026-06-18T16:00:00.000Z', 'Estadio Atlanta'),
+  (26, 'group', 'B', (SELECT id FROM public.teams WHERE code='SUI'), (SELECT id FROM public.teams WHERE code='BIH'), '2026-06-18T19:00:00.000Z', 'Estadio Los Ángeles'),
+  (27, 'group', 'B', (SELECT id FROM public.teams WHERE code='CAN'), (SELECT id FROM public.teams WHERE code='QAT'), '2026-06-18T22:00:00.000Z', 'Estadio BC Place Vancouver'),
+  (28, 'group', 'A', (SELECT id FROM public.teams WHERE code='MEX'), (SELECT id FROM public.teams WHERE code='KOR'), '2026-06-19T01:00:00.000Z', 'Estadio Guadalajara'),
+  (29, 'group', 'D', (SELECT id FROM public.teams WHERE code='USA'), (SELECT id FROM public.teams WHERE code='AUS'), '2026-06-19T19:00:00.000Z', 'Estadio Seattle'),
+  (30, 'group', 'C', (SELECT id FROM public.teams WHERE code='SCO'), (SELECT id FROM public.teams WHERE code='MAR'), '2026-06-19T22:00:00.000Z', 'Estadio Boston'),
+  (31, 'group', 'C', (SELECT id FROM public.teams WHERE code='BRA'), (SELECT id FROM public.teams WHERE code='HAI'), '2026-06-20T01:00:00.000Z', 'Estadio Filadelfia'),
+  (32, 'group', 'D', (SELECT id FROM public.teams WHERE code='TUR'), (SELECT id FROM public.teams WHERE code='PAR'), '2026-06-19T04:00:00.000Z', 'Estadio Bahía de San Francisco'),
+  (33, 'group', 'F', (SELECT id FROM public.teams WHERE code='NED'), (SELECT id FROM public.teams WHERE code='SWE'), '2026-06-20T17:00:00.000Z', 'Estadio Houston'),
+  (34, 'group', 'E', (SELECT id FROM public.teams WHERE code='GER'), (SELECT id FROM public.teams WHERE code='CIV'), '2026-06-20T20:00:00.000Z', 'Estadio Toronto'),
+  (35, 'group', 'E', (SELECT id FROM public.teams WHERE code='ECU'), (SELECT id FROM public.teams WHERE code='CUW'), '2026-06-21T02:00:00.000Z', 'Estadio Kansas City'),
+  (36, 'group', 'F', (SELECT id FROM public.teams WHERE code='TUN'), (SELECT id FROM public.teams WHERE code='JPN'), '2026-06-20T04:00:00.000Z', 'Estadio Monterrey'),
+  (37, 'group', 'H', (SELECT id FROM public.teams WHERE code='ESP'), (SELECT id FROM public.teams WHERE code='KSA'), '2026-06-21T16:00:00.000Z', 'Estadio Atlanta'),
+  (38, 'group', 'G', (SELECT id FROM public.teams WHERE code='BEL'), (SELECT id FROM public.teams WHERE code='IRN'), '2026-06-21T19:00:00.000Z', 'Estadio Los Ángeles'),
+  (39, 'group', 'H', (SELECT id FROM public.teams WHERE code='URU'), (SELECT id FROM public.teams WHERE code='CPV'), '2026-06-21T22:00:00.000Z', 'Estadio Miami'),
+  (40, 'group', 'G', (SELECT id FROM public.teams WHERE code='NZL'), (SELECT id FROM public.teams WHERE code='EGY'), '2026-06-22T01:00:00.000Z', 'Estadio BC Place Vancouver'),
+  (41, 'group', 'J', (SELECT id FROM public.teams WHERE code='ARG'), (SELECT id FROM public.teams WHERE code='AUT'), '2026-06-22T17:00:00.000Z', 'Estadio Dallas'),
+  (42, 'group', 'I', (SELECT id FROM public.teams WHERE code='FRA'), (SELECT id FROM public.teams WHERE code='IRQ'), '2026-06-22T21:00:00.000Z', 'Estadio Filadelfia'),
+  (43, 'group', 'I', (SELECT id FROM public.teams WHERE code='NOR'), (SELECT id FROM public.teams WHERE code='SEN'), '2026-06-23T00:00:00.000Z', 'Estadio Nueva York Nueva Jersey'),
+  (44, 'group', 'J', (SELECT id FROM public.teams WHERE code='JOR'), (SELECT id FROM public.teams WHERE code='ALG'), '2026-06-23T03:00:00.000Z', 'Estadio Bahía de San Francisco Bay'),
+  (45, 'group', 'K', (SELECT id FROM public.teams WHERE code='POR'), (SELECT id FROM public.teams WHERE code='UZB'), '2026-06-23T17:00:00.000Z', 'Estadio Houston'),
+  (46, 'group', 'L', (SELECT id FROM public.teams WHERE code='ENG'), (SELECT id FROM public.teams WHERE code='GHA'), '2026-06-23T20:00:00.000Z', 'Estadio Boston'),
+  (47, 'group', 'L', (SELECT id FROM public.teams WHERE code='PAN'), (SELECT id FROM public.teams WHERE code='CRO'), '2026-06-23T23:00:00.000Z', 'Estadio Toronto'),
+  (48, 'group', 'K', (SELECT id FROM public.teams WHERE code='COL'), (SELECT id FROM public.teams WHERE code='COD'), '2026-06-24T02:00:00.000Z', 'Estadio Guadalajara'),
+  (49, 'group', 'B', (SELECT id FROM public.teams WHERE code='SUI'), (SELECT id FROM public.teams WHERE code='CAN'), '2026-06-24T19:00:00.000Z', 'Estadio BC Place Vancouver'),
+  (50, 'group', 'B', (SELECT id FROM public.teams WHERE code='BIH'), (SELECT id FROM public.teams WHERE code='QAT'), '2026-06-24T19:00:00.000Z', 'Estadio Seattle'),
+  (51, 'group', 'C', (SELECT id FROM public.teams WHERE code='SCO'), (SELECT id FROM public.teams WHERE code='BRA'), '2026-06-24T22:00:00.000Z', 'Estadio Miami'),
+  (52, 'group', 'C', (SELECT id FROM public.teams WHERE code='MAR'), (SELECT id FROM public.teams WHERE code='HAI'), '2026-06-24T22:00:00.000Z', 'Estadio Atlanta'),
+  (53, 'group', 'A', (SELECT id FROM public.teams WHERE code='CZE'), (SELECT id FROM public.teams WHERE code='MEX'), '2026-06-25T01:00:00.000Z', 'Estadio Ciudad de México'),
+  (54, 'group', 'A', (SELECT id FROM public.teams WHERE code='RSA'), (SELECT id FROM public.teams WHERE code='KOR'), '2026-06-25T01:00:00.000Z', 'Estadio Monterrey'),
+  (55, 'group', 'E', (SELECT id FROM public.teams WHERE code='CUW'), (SELECT id FROM public.teams WHERE code='CIV'), '2026-06-25T20:00:00.000Z', 'Estadio Filadelfia'),
+  (56, 'group', 'E', (SELECT id FROM public.teams WHERE code='ECU'), (SELECT id FROM public.teams WHERE code='GER'), '2026-06-25T20:00:00.000Z', 'Estadio Nueva York Nueva Jersey'),
+  (57, 'group', 'F', (SELECT id FROM public.teams WHERE code='JPN'), (SELECT id FROM public.teams WHERE code='SWE'), '2026-06-25T23:00:00.000Z', 'Estadio Dallas'),
+  (58, 'group', 'F', (SELECT id FROM public.teams WHERE code='TUN'), (SELECT id FROM public.teams WHERE code='NED'), '2026-06-25T23:00:00.000Z', 'Estadio Kansas City'),
+  (59, 'group', 'D', (SELECT id FROM public.teams WHERE code='TUR'), (SELECT id FROM public.teams WHERE code='USA'), '2026-06-26T02:00:00.000Z', 'Estadio Los Ángeles'),
+  (60, 'group', 'D', (SELECT id FROM public.teams WHERE code='PAR'), (SELECT id FROM public.teams WHERE code='AUS'), '2026-06-26T02:00:00.000Z', 'Estadio Bahía de San Francisco'),
+  (61, 'group', 'I', (SELECT id FROM public.teams WHERE code='NOR'), (SELECT id FROM public.teams WHERE code='FRA'), '2026-06-26T19:00:00.000Z', 'Estadio Boston'),
+  (62, 'group', 'I', (SELECT id FROM public.teams WHERE code='SEN'), (SELECT id FROM public.teams WHERE code='IRQ'), '2026-06-26T19:00:00.000Z', 'Estadio Toronto'),
+  (63, 'group', 'H', (SELECT id FROM public.teams WHERE code='CPV'), (SELECT id FROM public.teams WHERE code='KSA'), '2026-06-27T00:00:00.000Z', 'Estadio Houston'),
+  (64, 'group', 'H', (SELECT id FROM public.teams WHERE code='URU'), (SELECT id FROM public.teams WHERE code='ESP'), '2026-06-27T00:00:00.000Z', 'Estadio Guadalajara'),
+  (65, 'group', 'G', (SELECT id FROM public.teams WHERE code='EGY'), (SELECT id FROM public.teams WHERE code='IRN'), '2026-06-27T03:00:00.000Z', 'Estadio Seattle'),
+  (66, 'group', 'G', (SELECT id FROM public.teams WHERE code='NZL'), (SELECT id FROM public.teams WHERE code='BEL'), '2026-06-27T03:00:00.000Z', 'Estadio BC Place Vancouver'),
+  (67, 'group', 'L', (SELECT id FROM public.teams WHERE code='PAN'), (SELECT id FROM public.teams WHERE code='ENG'), '2026-06-27T21:00:00.000Z', 'Estadio Nueva York Nueva Jersey'),
+  (68, 'group', 'L', (SELECT id FROM public.teams WHERE code='CRO'), (SELECT id FROM public.teams WHERE code='GHA'), '2026-06-27T21:00:00.000Z', 'Estadio Filadelfia'),
+  (69, 'group', 'K', (SELECT id FROM public.teams WHERE code='COL'), (SELECT id FROM public.teams WHERE code='POR'), '2026-06-27T23:30:00.000Z', 'Estadio Miami'),
+  (70, 'group', 'K', (SELECT id FROM public.teams WHERE code='COD'), (SELECT id FROM public.teams WHERE code='UZB'), '2026-06-27T23:30:00.000Z', 'Estadio Atlanta'),
+  (71, 'group', 'J', (SELECT id FROM public.teams WHERE code='ALG'), (SELECT id FROM public.teams WHERE code='AUT'), '2026-06-28T02:00:00.000Z', 'Estadio Kansas City'),
+  (72, 'group', 'J', (SELECT id FROM public.teams WHERE code='JOR'), (SELECT id FROM public.teams WHERE code='ARG'), '2026-06-28T02:00:00.000Z', 'Estadio Dallas');
+
+-- 32 partidos de eliminatorias (equipos TBD: etiquetas oficiales de cruce)
+INSERT INTO public.matches (match_number, stage, home_slot, away_slot, kickoff_at, venue) VALUES
+  (73, 'r32', '2º Grupo A', '2º Grupo B', '2026-06-28T20:00:00.000Z', 'Estadio Los Ángeles'),
+  (74, 'r32', '1º Grupo E', '3º Grupo A/B/C/D/F', '2026-06-29T20:00:00.000Z', 'Estadio Boston'),
+  (75, 'r32', '1º Grupo F', '2º Grupo C', '2026-06-29T20:00:00.000Z', 'Estadio Monterrey'),
+  (76, 'r32', '1º Grupo C', '2º Grupo F', '2026-06-29T20:00:00.000Z', 'Estadio Houston'),
+  (77, 'r32', '1º Grupo I', '3º Grupo C/D/F/G/H', '2026-06-30T20:00:00.000Z', 'Estadio Nueva York Nueva Jersey'),
+  (78, 'r32', '2º Grupo E', '2º Grupo I', '2026-06-30T20:00:00.000Z', 'Estadio Dallas'),
+  (79, 'r32', '1º Grupo A', '3º Grupo C/E/F/H/I', '2026-06-30T20:00:00.000Z', 'Estadio Ciudad de México'),
+  (80, 'r32', '1º Grupo L', '3º Grupo E/H/I/J/K', '2026-07-01T20:00:00.000Z', 'Estadio Atlanta'),
+  (81, 'r32', '1º Grupo D', '3º Grupo B/E/F/I/J', '2026-07-01T20:00:00.000Z', 'Estadio Bahía de San Francisco'),
+  (82, 'r32', '1º Grupo G', '3º Grupo A/E/H/I/J', '2026-07-01T20:00:00.000Z', 'Estadio Seattle'),
+  (83, 'r32', '2º Grupo K', '2º Grupo L', '2026-07-02T20:00:00.000Z', 'Estadio Toronto'),
+  (84, 'r32', '1º Grupo H', '2º Grupo J', '2026-07-02T20:00:00.000Z', 'Estadio Los Ángeles'),
+  (85, 'r32', '1º Grupo B', '3º Grupo E/F/G/I/J', '2026-07-02T20:00:00.000Z', 'Estadio BC Place Vancouver'),
+  (86, 'r32', '1º Grupo J', '2º Grupo H', '2026-07-03T20:00:00.000Z', 'Estadio Miami'),
+  (87, 'r32', '1º Grupo K', '3º Grupo D/E/I/J/L', '2026-07-03T20:00:00.000Z', 'Estadio Kansas City'),
+  (88, 'r32', '2º Grupo D', '2º Grupo G', '2026-07-03T20:00:00.000Z', 'Estadio Dallas'),
+  (89, 'r16', 'Ganador Partido 74', 'Ganador Partido 77', '2026-07-04T20:00:00.000Z', 'Estadio Filadelfia'),
+  (90, 'r16', 'Ganador Partido 73', 'Ganador Partido 75', '2026-07-04T20:00:00.000Z', 'Estadio Houston'),
+  (91, 'r16', 'Ganador Partido 76', 'Ganador Partido 78', '2026-07-05T20:00:00.000Z', 'Estadio Nueva York Nueva Jersey'),
+  (92, 'r16', 'Ganador Partido 79', 'Ganador Partido 80', '2026-07-05T20:00:00.000Z', 'Estadio Ciudad de México'),
+  (93, 'r16', 'Ganador Partido 83', 'Ganador Partido 84', '2026-07-06T20:00:00.000Z', 'Estadio Dallas'),
+  (94, 'r16', 'Ganador Partido 81', 'Ganador Partido 82', '2026-07-06T20:00:00.000Z', 'Estadio Seattle'),
+  (95, 'r16', 'Ganador Partido 86', 'Ganador Partido 88', '2026-07-07T20:00:00.000Z', 'Estadio Atlanta'),
+  (96, 'r16', 'Ganador Partido 85', 'Ganador Partido 87', '2026-07-07T20:00:00.000Z', 'Estadio BC Place Vancouver'),
+  (97, 'qf', 'Ganador Partido 89', 'Ganador Partido 90', '2026-07-09T20:00:00.000Z', 'Estadio Boston'),
+  (98, 'qf', 'Ganador Partido 93', 'Ganador Partido 94', '2026-07-10T20:00:00.000Z', 'Estadio Los Ángeles'),
+  (99, 'qf', 'Ganador Partido 91', 'Ganador Partido 92', '2026-07-11T20:00:00.000Z', 'Estadio Miami'),
+  (100, 'qf', 'Ganador Partido 95', 'Ganador Partido 96', '2026-07-11T20:00:00.000Z', 'Estadio Kansas City'),
+  (101, 'sf', 'Ganador Partido 97', 'Ganador Partido 98', '2026-07-14T20:00:00.000Z', 'Estadio Dallas'),
+  (102, 'sf', 'Ganador Partido 99', 'Ganador Partido 100', '2026-07-15T20:00:00.000Z', 'Estadio Atlanta'),
+  (103, 'third', 'Perdedor Partido 101', 'Perdedor Partido 102', '2026-07-18T20:00:00.000Z', 'Estadio Miami'),
+  (104, 'final', 'Ganador Partido 101', 'Ganador Partido 102', '2026-07-19T20:00:00.000Z', 'Estadio Nueva York Nueva Jersey');
+
 

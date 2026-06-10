@@ -18,6 +18,7 @@ export type ViewMatch = {
   away_score: number | null;
   home: Side;
   away: Side;
+  venue: string | null;
   predHome: number | null;
   predAway: number | null;
 };
@@ -157,6 +158,7 @@ export default function MatchesView({ matches }: { matches: ViewMatch[] }) {
               awayScore={m.away_score}
               initialHome={m.predHome}
               initialAway={m.predAway}
+              venue={m.venue}
             />
           </div>
         ))}

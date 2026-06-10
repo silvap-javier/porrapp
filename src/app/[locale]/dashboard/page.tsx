@@ -16,6 +16,7 @@ type MatchRow = {
   away_score: number | null;
   home_slot: string | null;
   away_slot: string | null;
+  venue: string | null;
   home_team: Pick<Team, "name" | "flag_emoji"> | null;
   away_team: Pick<Team, "name" | "flag_emoji"> | null;
 };
@@ -53,7 +54,7 @@ export default async function DashboardPage() {
   const { data: upcoming } = await supabase
     .from("matches")
     .select(
-      `id, match_number, kickoff_at, status, home_score, away_score, home_slot, away_slot,
+      `id, match_number, kickoff_at, status, home_score, away_score, home_slot, away_slot, venue,
        home_team:teams!matches_home_team_id_fkey(name, flag_emoji),
        away_team:teams!matches_away_team_id_fkey(name, flag_emoji)`
     )
@@ -152,6 +153,7 @@ export default async function DashboardPage() {
                   awayScore={m.away_score}
                   initialHome={pred?.home_score ?? null}
                   initialAway={pred?.away_score ?? null}
+                  venue={m.venue}
                 />
               );
             })}
