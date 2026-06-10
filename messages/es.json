@@ -144,7 +144,9 @@
     "breakdown": "Desglose por fase",
     "worldCupStatus": "Estado del Mundial",
     "matchesPlayed": "partidos jugados",
-    "group": "Grupo"
+    "group": "Grupo",
+    "macroPicks": "Picks de torneo",
+    "groupPicks": "1º y 2º de grupo"
   },
   "chat": {
     "empty": "Aún no hay mensajes. ¡Rompe el hielo! 👋",

@@ -18,6 +18,12 @@ export type PhaseRow = {
   points: number;
 };
 
+export type ExtraRow = {
+  user_id: string;
+  macro_pts: number;
+  group_pts: number;
+};
+
 export type GroupStanding = {
   group: string;
   rows: {
@@ -59,6 +65,7 @@ export default function LeagueHub({
   currentUserId,
   leaderboard,
   breakdown,
+  extraBreakdown,
   maxByStage,
   matches,
   teamsByGroup,
@@ -69,6 +76,7 @@ export default function LeagueHub({
   currentUserId: string;
   leaderboard: LeaderboardRow[];
   breakdown: PhaseRow[];
+  extraBreakdown: ExtraRow[];
   maxByStage: Record<string, number>;
   matches: LMatch[];
   teamsByGroup: Record<string, { flag: string; name: string }[]>;
@@ -144,6 +152,7 @@ export default function LeagueHub({
           <RankingTab
             leaderboard={leaderboard}
             breakdown={breakdown}
+            extraBreakdown={extraBreakdown}
             maxByStage={maxByStage}
             currentUserId={currentUserId}
           />
@@ -169,11 +178,13 @@ export default function LeagueHub({
 function RankingTab({
   leaderboard,
   breakdown,
+  extraBreakdown,
   maxByStage,
   currentUserId,
 }: {
   leaderboard: LeaderboardRow[];
   breakdown: PhaseRow[];
+  extraBreakdown: ExtraRow[];
   maxByStage: Record<string, number>;
   currentUserId: string;
 }) {
@@ -188,6 +199,12 @@ function RankingTab({
     }
     return m;
   }, [breakdown]);
+
+  const extraByUser = useMemo(() => {
+    const m = new Map<string, ExtraRow>();
+    for (const r of extraBreakdown) m.set(r.user_id, r);
+    return m;
+  }, [extraBreakdown]);
 
   const stages = STAGE_ORDER.filter((s) => (maxByStage[s] ?? 0) > 0);
 
@@ -244,6 +261,27 @@ function RankingTab({
                       </div>
                     );
                   })}
+
+                  {/* Picks de torneo y posiciones de grupo */}
+                  {(() => {
+                    const ex = extraByUser.get(r.user_id);
+                    return (
+                      <>
+                        <div className="flex items-center gap-2 text-xs pt-1 border-t border-border/60 mt-1">
+                          <span className="flex-1 text-foreground">{t("macroPicks")}</span>
+                          <span className="font-semibold text-foreground tabular-nums w-14 text-right">
+                            {ex?.macro_pts ?? 0} / 20
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs">
+                          <span className="flex-1 text-foreground">{t("groupPicks")}</span>
+                          <span className="font-semibold text-foreground tabular-nums w-14 text-right">
+                            {ex?.group_pts ?? 0} / 60
+                          </span>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
             )}

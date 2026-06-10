@@ -4,7 +4,7 @@ import LeagueHub from "@/components/LeagueHub";
 import { sideLabel } from "@/lib/format";
 import type { LeaderboardRow, Stage, Team } from "@/lib/types";
 import type { LMatch } from "@/components/LaPorritaView";
-import type { GroupStanding, PhaseRow } from "@/components/LeagueHub";
+import type { GroupStanding, PhaseRow, ExtraRow } from "@/components/LeagueHub";
 import type { ChatMessage } from "@/lib/chat-actions";
 
 type MatchRow = {
@@ -42,10 +42,11 @@ export default async function LeaguePage({
     .maybeSingle();
   if (!league) notFound();
 
-  const [{ data: board }, { data: breakdown }, { data: members }, { data: matchesData }, { data: preds }, { data: teamsData }, { data: msgs }] =
+  const [{ data: board }, { data: breakdown }, { data: extra }, { data: members }, { data: matchesData }, { data: preds }, { data: teamsData }, { data: msgs }] =
     await Promise.all([
       supabase.rpc("league_leaderboard", { p_league_id: id }),
       supabase.rpc("league_phase_breakdown", { p_league_id: id }),
+      supabase.rpc("league_extra_breakdown", { p_league_id: id }),
       supabase.from("league_members").select("user_id").eq("league_id", id),
       supabase
         .from("matches")
@@ -147,6 +148,7 @@ export default async function LeaguePage({
       currentUserId={user.id}
       leaderboard={(board ?? []) as LeaderboardRow[]}
       breakdown={(breakdown ?? []) as PhaseRow[]}
+      extraBreakdown={(extra ?? []) as ExtraRow[]}
       maxByStage={maxByStage}
       matches={matches}
       teamsByGroup={teamsByGroup}
