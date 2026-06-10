@@ -91,7 +91,7 @@ export default function ResultsView({ matches }: { matches: ViewResult[] }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
+      <div className="flex flex-wrap gap-1.5">
         {stages.map((s) => (
           <button
             key={s}
@@ -111,7 +111,7 @@ export default function ResultsView({ matches }: { matches: ViewResult[] }) {
       </div>
 
       {stage === "group" && groups.length > 0 && (
-        <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
+        <div className="flex flex-wrap gap-1.5">
           <GroupChip
             active={group === "all"}
             onClick={() => setGroup("all")}

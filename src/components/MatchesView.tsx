@@ -94,7 +94,7 @@ export default function MatchesView({ matches }: { matches: ViewMatch[] }) {
   return (
     <div className="space-y-4">
       {/* Pestañas por fase */}
-      <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
+      <div className="flex flex-wrap gap-1.5">
         {stages.map((s) => (
           <button
             key={s}
@@ -115,7 +115,7 @@ export default function MatchesView({ matches }: { matches: ViewMatch[] }) {
 
       {/* Chips por grupo (solo en fase de grupos) */}
       {stage === "group" && groups.length > 0 && (
-        <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
+        <div className="flex flex-wrap gap-1.5">
           <GroupChip
             active={group === "all"}
             onClick={() => setGroup("all")}

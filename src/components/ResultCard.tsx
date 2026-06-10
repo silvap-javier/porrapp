@@ -67,11 +67,11 @@ export default function ResultCard({
   };
 
   const inputClass =
-    "w-12 h-10 text-center text-base rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/50";
+    "w-12 h-9 text-center text-base rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/50";
 
   return (
-    <div className="bg-surface border border-border rounded-2xl p-4 shadow-[var(--shadow-warm)]">
-      <div className="flex items-center justify-between gap-2 mb-1.5">
+    <div className="bg-surface border border-border rounded-xl px-3.5 py-3 shadow-[var(--shadow-warm)]">
+      <div className="flex items-center justify-between gap-2 mb-1">
         {tag ? (
           <span className="text-[11px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
             {tag}
@@ -88,12 +88,12 @@ export default function ResultCard({
         )}
       </div>
 
-      <p className="text-xs text-muted mb-3 leading-snug">
+      <p className="text-[11px] text-muted mb-2 truncate">
         {formatKickoff(kickoffAt)}
-        {venue ? <span className="block sm:inline sm:before:content-['_·_']">📍 {venue}</span> : null}
+        {venue ? ` · 📍 ${venue}` : ""}
       </p>
 
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         <div className="flex items-center justify-between gap-3">
           <span className="flex items-center gap-2 min-w-0">
             <span className="text-xl flex-shrink-0">{home.flag}</span>
@@ -130,7 +130,7 @@ export default function ResultCard({
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-2 mt-3 min-h-8">
+      <div className="flex items-center justify-between gap-2 mt-2">
         <span className="text-xs text-muted truncate">
           {setByName ? `${t("setBy")} ${setByName}` : ""}
         </span>
