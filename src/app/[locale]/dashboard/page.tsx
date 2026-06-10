@@ -51,9 +51,47 @@ export default async function DashboardPage() {
   const total = matchTotal ?? 104;
   const pct = total ? Math.round((predicted / total) * 100) : 0;
 
+  // Aviso: partidos abiertos (>60 min) en las próximas 48 h sin pronosticar
+  const now = Date.now();
+  const lockCut = new Date(now + 60 * 60 * 1000).toISOString();
+  const within48 = new Date(now + 48 * 60 * 60 * 1000).toISOString();
+  const { data: soon } = await supabase
+    .from("matches")
+    .select("id")
+    .eq("status", "scheduled")
+    .gt("kickoff_at", lockCut)
+    .lte("kickoff_at", within48);
+  const soonIds = (soon ?? []).map((m) => m.id);
+  const { data: soonPreds } = soonIds.length
+    ? await supabase
+        .from("match_predictions")
+        .select("match_id")
+        .eq("user_id", user.id)
+        .in("match_id", soonIds)
+    : { data: [] };
+  const predSet = new Set((soonPreds ?? []).map((p) => p.match_id));
+  const pendingSoon = soonIds.filter((id) => !predSet.has(id)).length;
+
   return (
     <div className="max-w-2xl mx-auto px-3 py-6 space-y-6">
       <h1 className="text-2xl font-bold text-foreground font-display px-1">{t("title")}</h1>
+
+      {/* Aviso de pronósticos pendientes inminentes */}
+      {pendingSoon > 0 && (
+        <Link
+          href="/matches"
+          className="flex items-center gap-3 bg-accent/10 border border-accent/40 rounded-2xl p-4 hover:bg-accent/15 transition-colors"
+        >
+          <span className="text-2xl flex-shrink-0">⏰</span>
+          <span className="flex-1 min-w-0">
+            <span className="block text-sm font-semibold text-foreground">
+              {t("reminderTitle", { count: pendingSoon })}
+            </span>
+            <span className="block text-xs text-muted">{t("reminderBody")}</span>
+          </span>
+          <span className="text-accent flex-shrink-0">›</span>
+        </Link>
+      )}
 
       {/* Stats */}
       <div className="bg-surface border border-border rounded-2xl p-4 shadow-[var(--shadow-warm)]">

@@ -70,6 +70,8 @@
     "yourPoints": "Tus puntos",
     "predicted": "Pronosticados",
     "owner": "Creador",
+    "reminderTitle": "Te faltan {count} pronósticos",
+    "reminderBody": "para partidos de las próximas horas. ¡No te quedes sin puntuar!",
     "yourLeagues": "Tus ligas",
     "newLeague": "+ Nueva liga",
     "noLeagues": "Aún no estás en ninguna liga. Crea una o únete con un código.",
