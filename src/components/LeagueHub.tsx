@@ -112,7 +112,7 @@ export default function LeagueHub({
             onClick={() => setShowInfo((s) => !s)}
             className="text-sm flex-shrink-0 bg-surface border border-border px-3 py-1.5 rounded-full hover:border-primary/40 transition-colors"
           >
-            {showInfo ? "✕" : t("invite")}
+            {showInfo ? "✕" : `⚙️ ${t("settings")}`}
           </button>
         </div>
 
