@@ -191,7 +191,8 @@
     "reopen": "Reabrir",
     "confirmClear": "¿Reabrir el partido y borrar el resultado?",
     "save": "Guardar",
-    "saving": "…"
+    "saving": "…",
+    "saved": "Guardado"
   },
   "picks": {
     "title": "Mis picks de torneo",
