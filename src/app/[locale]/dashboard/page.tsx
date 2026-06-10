@@ -43,11 +43,30 @@ export default async function DashboardPage() {
     })
     .filter(Boolean) as { id: string; name: string; join_code: string; role: string }[];
 
-  // Puntos totales del usuario
+  // Conteo de miembros por liga
+  const leagueIds = leagues.map((l) => l.id);
+  const { data: allMembers } = leagueIds.length
+    ? await supabase.from("league_members").select("league_id").in("league_id", leagueIds)
+    : { data: [] };
+  const memberCount = new Map<string, number>();
+  for (const m of allMembers ?? []) memberCount.set(m.league_id, (memberCount.get(m.league_id) ?? 0) + 1);
+
+  // Puntos y progreso
   const { data: mp } = await supabase.rpc("match_points", { p_user_id: user.id });
   const { data: macro } = await supabase.rpc("macro_points", { p_user_id: user.id });
-  const matchStats = Array.isArray(mp) && mp[0] ? mp[0] : { total: 0, exact_count: 0, predicted_count: 0 };
+  const matchStats = Array.isArray(mp) && mp[0] ? mp[0] : { total: 0 };
   const totalPoints = (matchStats.total ?? 0) + (macro ?? 0);
+
+  const { count: predCount } = await supabase
+    .from("match_predictions")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", user.id);
+  const { count: matchTotal } = await supabase
+    .from("matches")
+    .select("*", { count: "exact", head: true });
+  const predicted = predCount ?? 0;
+  const total = matchTotal ?? 104;
+  const pct = total ? Math.round((predicted / total) * 100) : 0;
 
   // Próximos partidos
   const nowIso = new Date().toISOString();
@@ -61,7 +80,7 @@ export default async function DashboardPage() {
     .gte("kickoff_at", nowIso)
     .eq("status", "scheduled")
     .order("kickoff_at", { ascending: true })
-    .limit(5);
+    .limit(3);
 
   const upcomingMatches = (upcoming ?? []) as unknown as MatchRow[];
   const matchIds = upcomingMatches.map((m) => m.id);
@@ -77,18 +96,32 @@ export default async function DashboardPage() {
   );
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8 space-y-10">
-      <header className="flex items-center justify-between gap-4">
-        <h1 className="text-3xl font-bold text-foreground font-display">{t("title")}</h1>
-        <div className="text-right">
-          <div className="text-3xl font-bold text-primary">{totalPoints}</div>
-          <div className="text-xs text-muted">{t("yourPoints")}</div>
+    <div className="max-w-2xl mx-auto px-3 py-6 space-y-6">
+      <h1 className="text-2xl font-bold text-foreground font-display px-1">{t("title")}</h1>
+
+      {/* Stats */}
+      <div className="bg-surface border border-border rounded-2xl p-4 shadow-[var(--shadow-warm)]">
+        <div className="flex items-end justify-between">
+          <div>
+            <p className="text-xs text-muted">{t("yourPoints")}</p>
+            <p className="text-4xl font-bold text-primary leading-none mt-1">{totalPoints}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-muted">{t("predicted")}</p>
+            <p className="text-2xl font-bold text-foreground leading-none mt-1">
+              {predicted}
+              <span className="text-base text-muted font-normal">/{total}</span>
+            </p>
+          </div>
         </div>
-      </header>
+        <div className="mt-3 h-1.5 rounded-full bg-surface-hover overflow-hidden">
+          <div className="h-full bg-primary transition-all" style={{ width: `${pct}%` }} />
+        </div>
+      </div>
 
       {/* Ligas */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
+      <section className="space-y-3">
+        <div className="flex items-center justify-between px-1">
           <h2 className="text-lg font-semibold text-foreground">{t("yourLeagues")}</h2>
           <Link
             href="/leagues/new"
@@ -108,10 +141,17 @@ export default async function DashboardPage() {
               <li key={lg.id}>
                 <Link
                   href={`/leagues/${lg.id}`}
-                  className="flex items-center justify-between bg-surface border border-border rounded-2xl p-4 shadow-[var(--shadow-warm)] hover:border-primary/40 transition-colors"
+                  className="flex items-center gap-3 bg-surface border border-border rounded-2xl p-4 shadow-[var(--shadow-warm)] hover:border-primary/40 transition-colors"
                 >
-                  <span className="font-medium text-foreground">🏆 {lg.name}</span>
-                  <span className="text-xs font-mono text-muted">{lg.join_code}</span>
+                  <span className="text-2xl flex-shrink-0">🏆</span>
+                  <span className="flex-1 min-w-0">
+                    <span className="block font-semibold text-foreground truncate">{lg.name}</span>
+                    <span className="text-xs text-muted">
+                      👥 {memberCount.get(lg.id) ?? 1}
+                      {lg.role === "owner" && <span className="text-secondary"> · ⭐ {t("owner")}</span>}
+                    </span>
+                  </span>
+                  <span className="text-muted flex-shrink-0">›</span>
                 </Link>
               </li>
             ))}
@@ -125,8 +165,8 @@ export default async function DashboardPage() {
       </section>
 
       {/* Próximos partidos */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
+      <section className="space-y-3">
+        <div className="flex items-center justify-between px-1">
           <h2 className="text-lg font-semibold text-foreground">{t("upcoming")}</h2>
           <Link href="/matches" className="text-sm text-primary hover:text-primary-dark">
             {t("allMatches")} →
@@ -134,19 +174,17 @@ export default async function DashboardPage() {
         </div>
 
         {upcomingMatches.length === 0 ? (
-          <p className="text-sm text-muted">{t("noUpcoming")}</p>
+          <p className="text-sm text-muted px-1">{t("noUpcoming")}</p>
         ) : (
           <div className="space-y-3">
             {upcomingMatches.map((m) => {
-              const home = sideLabel(m.home_team, m.home_slot);
-              const away = sideLabel(m.away_team, m.away_slot);
               const pred = predByMatch.get(m.id);
               return (
                 <MatchCard
                   key={m.id}
                   matchId={m.id}
-                  home={home}
-                  away={away}
+                  home={sideLabel(m.home_team, m.home_slot)}
+                  away={sideLabel(m.away_team, m.away_slot)}
                   kickoffAt={m.kickoff_at}
                   status={m.status}
                   homeScore={m.home_score}

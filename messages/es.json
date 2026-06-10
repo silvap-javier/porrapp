@@ -67,7 +67,9 @@
   },
   "dashboard": {
     "title": "Tu porra",
-    "yourPoints": "tus puntos",
+    "yourPoints": "Tus puntos",
+    "predicted": "Pronosticados",
+    "owner": "Creador",
     "yourLeagues": "Tus ligas",
     "newLeague": "+ Nueva liga",
     "noLeagues": "Aún no estás en ninguna liga. Crea una o únete con un código.",
