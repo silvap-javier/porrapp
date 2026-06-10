@@ -121,6 +121,21 @@
     "saving": "…",
     "saved": "Guardado"
   },
+  "porrita": {
+    "predictions": "predicciones",
+    "group": "Grupo",
+    "matchesLabel": "Partidos",
+    "pending": "pendientes",
+    "matchday": "Jornada",
+    "cancel": "Cancelar",
+    "prediction": "Predicción",
+    "save": "Guardar",
+    "saving": "…",
+    "locked": "Pronósticos cerrados",
+    "homeWin": "Local",
+    "draw": "Empate",
+    "awayWin": "Visitante"
+  },
   "results": {
     "title": "Resultados",
     "subtitle": "Carga el marcador real de cada partido para actualizar la tabla.",
