@@ -121,6 +121,18 @@
     "saving": "…",
     "saved": "Guardado"
   },
+  "hub": {
+    "invite": "Invitar",
+    "ranking": "Ranking",
+    "porrita": "LaPorrita",
+    "mundial": "Mundial",
+    "calendario": "Calendario",
+    "noPlayers": "Aún no hay jugadores.",
+    "breakdown": "Desglose por fase",
+    "worldCupStatus": "Estado del Mundial",
+    "matchesPlayed": "partidos jugados",
+    "group": "Grupo"
+  },
   "porrita": {
     "predictions": "predicciones",
     "group": "Grupo",
