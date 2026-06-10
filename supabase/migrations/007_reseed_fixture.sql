@@ -1,20 +1,16 @@
 -- ============================================================================
--- PorrApp — 006_seed_worldcup2026
--- Carga inicial del Mundial 2026: 48 selecciones en los 12 grupos OFICIALES
--- (sorteo dic-2025), 72 partidos de fase de grupos (round-robin) y 32 de
--- eliminatorias.
+-- PorrApp — 007_reseed_fixture
+-- Reemplaza el fixture de plantilla por los 12 grupos OFICIALES del Mundial
+-- 2026 (sorteo dic-2025). Para bases ya sembradas con 006 antiguo.
 --
--- Equipos por grupo en el orden del calendario oficial, de modo que el patrón
--- round-robin reproduce las jornadas reales (J1 del grupo A = México–Sudáfrica
--- y Corea–Rep. Checa; última del J = Argentina–Jordania).
---
--- ⚠️  Las HORAS de kickoff son una plantilla (se reparten por el torneo). Los
---     cruces y equipos son los oficiales. Cualquier usuario puede ajustar
---     horarios, definir cruces de eliminatorias y cargar resultados desde
---     /resultados.
---
--- Idempotente: no hace nada si ya hay partidos cargados.
+-- ⚠️  Borra todos los partidos y equipos y los recarga. Esto elimina en cascada
+--     los pronósticos y resultados ya cargados (datos de prueba). Los macro
+--     picks que apunten a equipos quedan a NULL.
+--     Ejecutar SOLO durante la puesta a punto, antes de jugar en serio.
 -- ============================================================================
+
+DELETE FROM public.matches;
+DELETE FROM public.teams;
 
 DO $$
 DECLARE
@@ -65,7 +61,6 @@ DECLARE
     '🏴󠁧󠁢󠁥󠁮󠁧󠁿','🇭🇷','🇬🇭','🇵🇦'
   ];
 
-  -- Round-robin de 4 equipos (posiciones 1–4): 6 partidos.
   pat_h INT[] := ARRAY[1,3,1,4,4,2];
   pat_a INT[] := ARRAY[2,4,3,2,1,3];
 
@@ -77,12 +72,6 @@ DECLARE
   new_id UUID;
   mnum INT := 0;
 BEGIN
-  IF EXISTS (SELECT 1 FROM public.matches) THEN
-    RAISE NOTICE 'PorrApp seed: ya hay partidos cargados, no se hace nada.';
-    RETURN;
-  END IF;
-
-  -- ---- Equipos + partidos de grupos ----
   FOR gi IN 0..11 LOOP
     team_ids := ARRAY[]::UUID[];
     FOR j IN 1..4 LOOP
@@ -105,7 +94,6 @@ BEGIN
     END LOOP;
   END LOOP;
 
-  -- ---- Eliminatorias (equipos TBD, etiquetas de cruce) ----
   FOR k IN 1..16 LOOP
     mnum := mnum + 1;
     INSERT INTO public.matches (match_number, stage, home_slot, away_slot, kickoff_at)
@@ -152,5 +140,5 @@ BEGIN
   VALUES (mnum, 'final', 'Ganador SF-1', 'Ganador SF-2',
     base_ko + ((mnum - 73) * INTERVAL '12 hours'));
 
-  RAISE NOTICE 'PorrApp seed completo: 48 equipos, % partidos.', mnum;
+  RAISE NOTICE 'PorrApp reseed completo: 48 equipos, % partidos.', mnum;
 END $$;
