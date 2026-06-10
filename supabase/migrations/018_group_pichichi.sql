@@ -84,9 +84,9 @@ RETURNS TABLE (
     p.id,
     p.name,
     p.email,
-    (mp.total + public.macro_points(p.id) + public.group_position_points(p.id) + public.group_pichichi_points(p.id))::INT,
-    mp.total,
-    (public.macro_points(p.id) + public.group_position_points(p.id) + public.group_pichichi_points(p.id))::INT,
+    (mp.total + public.macro_points(p.id) + public.group_position_points(p.id) + public.group_pichichi_points(p.id))::INT AS total_points,
+    mp.total AS match_points,
+    (public.macro_points(p.id) + public.group_position_points(p.id) + public.group_pichichi_points(p.id))::INT AS macro_points,
     mp.exact_count,
     mp.result_count,
     mp.predicted_count
