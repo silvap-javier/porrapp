@@ -132,6 +132,7 @@
     "topScorer": "Goleador",
     "finished": "Finalizado",
     "pending": "Pendiente",
+    "loadedCount": "resultados cargados",
     "setBy": "Cargado por",
     "reopen": "Reabrir",
     "confirmClear": "¿Reabrir el partido y borrar el resultado?",

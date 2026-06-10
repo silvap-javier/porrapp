@@ -2,13 +2,12 @@
 
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import MatchCard from "./MatchCard";
-import { isMatchOpen } from "@/lib/scoring";
+import ResultCard from "./ResultCard";
 import type { Stage } from "@/lib/types";
 
 type Side = { flag: string; name: string };
 
-export type ViewMatch = {
+export type ViewResult = {
   id: string;
   stage: Stage;
   group_letter: string | null;
@@ -18,8 +17,7 @@ export type ViewMatch = {
   away_score: number | null;
   home: Side;
   away: Side;
-  predHome: number | null;
-  predAway: number | null;
+  setByName: string | null;
 };
 
 const STAGE_ORDER: Stage[] = ["group", "r32", "r16", "qf", "sf", "third", "final"];
@@ -33,8 +31,9 @@ const STAGE_SHORT: Record<Stage, string> = {
   final: "Final",
 };
 
-export default function MatchesView({ matches }: { matches: ViewMatch[] }) {
+export default function ResultsView({ matches }: { matches: ViewResult[] }) {
   const t = useTranslations("matches");
+  const tr = useTranslations("results");
 
   const stages = useMemo(
     () => STAGE_ORDER.filter((s) => matches.some((m) => m.stage === s)),
@@ -55,9 +54,8 @@ export default function MatchesView({ matches }: { matches: ViewMatch[] }) {
   const [stage, setStage] = useState<Stage>(stages[0] ?? "group");
   const [group, setGroup] = useState<string>("all");
 
-  // Pendiente = partido abierto (aún se puede pronosticar) y sin pronóstico.
-  const isPending = (m: ViewMatch) =>
-    isMatchOpen(m.kickoff_at, m.status) && m.predHome === null;
+  // Pendiente = sin resultado cargado.
+  const isPending = (m: ViewResult) => m.status !== "finished";
 
   const pendingByStage = useMemo(() => {
     const map = new Map<Stage, number>();
@@ -88,11 +86,10 @@ export default function MatchesView({ matches }: { matches: ViewMatch[] }) {
       (stage !== "group" || group === "all" || m.group_letter === group)
   );
 
-  const predicted = visible.filter((m) => m.predHome !== null).length;
+  const loaded = visible.filter((m) => m.status === "finished").length;
 
   return (
     <div className="space-y-4">
-      {/* Pestañas por fase */}
       <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
         {stages.map((s) => (
           <button
@@ -112,7 +109,6 @@ export default function MatchesView({ matches }: { matches: ViewMatch[] }) {
         ))}
       </div>
 
-      {/* Chips por grupo (solo en fase de grupos) */}
       {stage === "group" && groups.length > 0 && (
         <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
           <GroupChip
@@ -133,12 +129,10 @@ export default function MatchesView({ matches }: { matches: ViewMatch[] }) {
         </div>
       )}
 
-      {/* Contador */}
       <p className="text-xs text-muted">
-        {predicted}/{visible.length} {t("predictedCount")}
+        {loaded}/{visible.length} {tr("loadedCount")}
       </p>
 
-      {/* Lista */}
       <div className="space-y-3">
         {visible.map((m) => (
           <div key={m.id}>
@@ -147,7 +141,7 @@ export default function MatchesView({ matches }: { matches: ViewMatch[] }) {
                 {t("group")} {m.group_letter}
               </span>
             )}
-            <MatchCard
+            <ResultCard
               matchId={m.id}
               home={m.home}
               away={m.away}
@@ -155,8 +149,7 @@ export default function MatchesView({ matches }: { matches: ViewMatch[] }) {
               status={m.status}
               homeScore={m.home_score}
               awayScore={m.away_score}
-              initialHome={m.predHome}
-              initialAway={m.predAway}
+              setByName={m.setByName}
             />
           </div>
         ))}

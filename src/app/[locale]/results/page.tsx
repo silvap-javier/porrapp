@@ -1,14 +1,16 @@
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
-import ResultCard from "@/components/ResultCard";
 import OutcomeForm from "@/components/OutcomeForm";
+import ResultsView, { type ViewResult } from "@/components/ResultsView";
 import { sideLabel } from "@/lib/format";
-import type { Team } from "@/lib/types";
+import type { Stage, Team } from "@/lib/types";
 
 type MatchRow = {
   id: string;
   match_number: number;
+  stage: Stage;
+  group_letter: string | null;
   kickoff_at: string;
   status: "scheduled" | "finished";
   home_score: number | null;
@@ -32,14 +34,26 @@ export default async function ResultsPage() {
   const { data: matchesData } = await supabase
     .from("matches")
     .select(
-      `id, match_number, kickoff_at, status, home_score, away_score, home_slot, away_slot,
+      `id, match_number, stage, group_letter, kickoff_at, status, home_score, away_score, home_slot, away_slot,
        home_team:teams!matches_home_team_id_fkey(name, flag_emoji),
        away_team:teams!matches_away_team_id_fkey(name, flag_emoji),
        result_setter:profiles!matches_result_set_by_fkey(name)`
     )
-    .order("kickoff_at", { ascending: true });
+    .order("match_number", { ascending: true });
 
-  const matches = (matchesData ?? []) as unknown as MatchRow[];
+  const rows = (matchesData ?? []) as unknown as MatchRow[];
+  const matches: ViewResult[] = rows.map((m) => ({
+    id: m.id,
+    stage: m.stage,
+    group_letter: m.group_letter,
+    kickoff_at: m.kickoff_at,
+    status: m.status,
+    home_score: m.home_score,
+    away_score: m.away_score,
+    home: sideLabel(m.home_team, m.home_slot),
+    away: sideLabel(m.away_team, m.away_slot),
+    setByName: m.result_setter?.name ?? null,
+  }));
 
   const { data: teamsData } = await supabase
     .from("teams")
@@ -78,23 +92,7 @@ export default async function ResultsPage() {
       {/* Resultados de partidos */}
       <section className="space-y-3">
         <h2 className="font-semibold text-foreground">{t("matchResults")}</h2>
-        {matches.map((m) => {
-          const home = sideLabel(m.home_team, m.home_slot);
-          const away = sideLabel(m.away_team, m.away_slot);
-          return (
-            <ResultCard
-              key={m.id}
-              matchId={m.id}
-              home={home}
-              away={away}
-              kickoffAt={m.kickoff_at}
-              status={m.status}
-              homeScore={m.home_score}
-              awayScore={m.away_score}
-              setByName={m.result_setter?.name ?? null}
-            />
-          );
-        })}
+        <ResultsView matches={matches} />
       </section>
     </div>
   );
