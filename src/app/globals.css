@@ -1,0 +1,103 @@
+@import "tailwindcss";
+
+/*
+ * PorrApp palette — fútbol + trofeo.
+ * Light: paper blanco + verde césped + dorado trofeo.
+ * Dark:  midnight estadio + verde lighter + dorado lighter.
+ */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #f4f7f5;
+  --foreground: #15241c;
+  --primary: #0f9d58;
+  --primary-dark: #0a7c45;
+  --primary-light: #4cc88a;
+  --secondary: #d4af37;
+  --accent: #e8743c;
+  --surface: #ffffff;
+  --surface-hover: #eaf1ec;
+  --muted: #67786f;
+  --border: #d6e2da;
+  --shadow-warm: 0 4px 16px rgba(15, 157, 88, 0.08);
+  --shadow-warm-lg: 0 8px 24px rgba(15, 157, 88, 0.12);
+  color-scheme: light;
+}
+
+.dark {
+  --background: #0e1512;
+  --foreground: #e7efe9;
+  --primary: #2ec27e;
+  --primary-dark: #0f9d58;
+  --primary-light: #6bd6a3;
+  --secondary: #e3c45f;
+  --accent: #ef8a55;
+  --surface: #18211c;
+  --surface-hover: #212c25;
+  --muted: #8a9990;
+  --border: #2c382f;
+  --shadow-warm: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --shadow-warm-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-dark: var(--primary-dark);
+  --color-primary-light: var(--primary-light);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-lora);
+  --shadow-warm: var(--shadow-warm);
+  --shadow-warm-lg: var(--shadow-warm-lg);
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior-y: contain;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+.font-display {
+  font-family: var(--font-lora), Georgia, "Iowan Old Style", serif;
+  font-feature-settings: "liga", "dlig";
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}

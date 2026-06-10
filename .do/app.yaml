@@ -1,0 +1,52 @@
+# DigitalOcean App Platform — App Spec para PorrApp
+# ============================================================================
+# Cómo usarlo:
+#   1. En DigitalOcean → Apps → Create App → conecta el repo de PorrApp
+#      (vía la GitHub App de DO, no por SSH).
+#   2. DO detecta este archivo. Revisa el plan y los env vars.
+#   3. Rellena los VALORES de los env vars en el panel (este archivo NO lleva
+#      secretos — solo declara las claves y su scope).
+#
+# Auto-deploy: cada push a `main` redespliega (deploy_on_push: true).
+# `next start` ya escucha en el $PORT que inyecta App Platform (8080).
+# ============================================================================
+
+name: porrapp
+region: fra            # Frankfurt. Cambia si prefieres ams/nyc.
+
+services:
+  - name: web
+    github:
+      repo: silvap-javier/porrapp
+      branch: main
+      deploy_on_push: true
+    source_dir: /
+    environment_slug: node-js
+    build_command: npm run build
+    run_command: npm start
+    http_port: 8080
+    instance_count: 1
+    # 1 GB evita OOM durante el build de Next 16 (0.5 GB suele quedarse corto).
+    instance_size_slug: apps-s-1vcpu-1gb
+
+    health_check:
+      http_path: /
+
+    # --------------------------------------------------------------------
+    # Variables de entorno. Los VALORES se rellenan en el panel de DO.
+    # Las NEXT_PUBLIC_* deben estar en BUILD (se hornean en el bundle del
+    # cliente); los secretos van como RUN_TIME + type: SECRET.
+    # --------------------------------------------------------------------
+    envs:
+      # Públicas — necesarias en build y run
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        scope: BUILD_AND_RUN_TIME
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        scope: BUILD_AND_RUN_TIME
+      - key: NEXT_PUBLIC_APP_URL
+        scope: BUILD_AND_RUN_TIME
+
+      # Secretas — solo en run, cifradas
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        scope: RUN_TIME
+        type: SECRET
