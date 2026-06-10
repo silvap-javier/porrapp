@@ -52,9 +52,9 @@ export default async function DashboardPage() {
   const pct = total ? Math.round((predicted / total) * 100) : 0;
 
   // Aviso: partidos abiertos (>60 min) en las próximas 48 h sin pronosticar
-  const now = Date.now();
-  const lockCut = new Date(now + 60 * 60 * 1000).toISOString();
-  const within48 = new Date(now + 48 * 60 * 60 * 1000).toISOString();
+  const nowMs = new Date().getTime();
+  const lockCut = new Date(nowMs + 60 * 60 * 1000).toISOString();
+  const within48 = new Date(nowMs + 48 * 60 * 60 * 1000).toISOString();
   const { data: soon } = await supabase
     .from("matches")
     .select("id")
