@@ -110,6 +110,8 @@
     "title": "Partidos",
     "subtitle": "Mete tu marcador. Cierra 60 minutos antes de cada partido.",
     "group": "Grupo",
+    "allGroups": "Todos",
+    "predictedCount": "pronosticados",
     "open": "Abierto",
     "locked": "Cerrado",
     "final": "Final",

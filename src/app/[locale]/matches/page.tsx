@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
-import MatchCard from "@/components/MatchCard";
+import MatchesView, { type ViewMatch } from "@/components/MatchesView";
 import { sideLabel } from "@/lib/format";
-import { STAGE_LABELS, type Stage, type Team } from "@/lib/types";
+import type { Stage, Team } from "@/lib/types";
 
 type MatchRow = {
   id: string;
@@ -19,8 +19,6 @@ type MatchRow = {
   home_team: Pick<Team, "name" | "flag_emoji"> | null;
   away_team: Pick<Team, "name" | "flag_emoji"> | null;
 };
-
-const STAGE_ORDER: Stage[] = ["group", "r32", "r16", "qf", "sf", "third", "final"];
 
 export default async function MatchesPage() {
   const supabase = await createClient();
@@ -40,7 +38,7 @@ export default async function MatchesPage() {
     )
     .order("match_number", { ascending: true });
 
-  const matches = (matchesData ?? []) as unknown as MatchRow[];
+  const rows = (matchesData ?? []) as unknown as MatchRow[];
 
   const { data: preds } = await supabase
     .from("match_predictions")
@@ -50,53 +48,31 @@ export default async function MatchesPage() {
     (preds ?? []).map((p) => [p.match_id, p as { home_score: number; away_score: number }])
   );
 
-  // Agrupa por fase
-  const byStage = new Map<Stage, MatchRow[]>();
-  for (const m of matches) {
-    const arr = byStage.get(m.stage) ?? [];
-    arr.push(m);
-    byStage.set(m.stage, arr);
-  }
+  const matches: ViewMatch[] = rows.map((m) => {
+    const pred = predByMatch.get(m.id);
+    return {
+      id: m.id,
+      stage: m.stage,
+      group_letter: m.group_letter,
+      kickoff_at: m.kickoff_at,
+      status: m.status,
+      home_score: m.home_score,
+      away_score: m.away_score,
+      home: sideLabel(m.home_team, m.home_slot),
+      away: sideLabel(m.away_team, m.away_slot),
+      predHome: pred?.home_score ?? null,
+      predAway: pred?.away_score ?? null,
+    };
+  });
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8 space-y-8">
+    <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
       <header>
         <h1 className="text-3xl font-bold text-foreground font-display">{t("title")}</h1>
         <p className="text-sm text-muted mt-1">{t("subtitle")}</p>
       </header>
 
-      {STAGE_ORDER.filter((s) => byStage.has(s)).map((stage) => (
-        <section key={stage} className="space-y-3">
-          <h2 className="text-lg font-semibold text-foreground sticky top-14 bg-background/80 backdrop-blur py-1 z-10">
-            {STAGE_LABELS[stage]}
-          </h2>
-          <div className="space-y-3">
-            {byStage.get(stage)!.map((m) => {
-              const home = sideLabel(m.home_team, m.home_slot);
-              const away = sideLabel(m.away_team, m.away_slot);
-              const pred = predByMatch.get(m.id);
-              return (
-                <div key={m.id}>
-                  {m.group_letter && (
-                    <span className="text-xs text-muted ml-1">{t("group")} {m.group_letter}</span>
-                  )}
-                  <MatchCard
-                    matchId={m.id}
-                    home={home}
-                    away={away}
-                    kickoffAt={m.kickoff_at}
-                    status={m.status}
-                    homeScore={m.home_score}
-                    awayScore={m.away_score}
-                    initialHome={pred?.home_score ?? null}
-                    initialAway={pred?.away_score ?? null}
-                  />
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      ))}
+      <MatchesView matches={matches} />
     </div>
   );
 }
