@@ -37,7 +37,7 @@ export default async function LeaguePage({
 
   const { data: league } = await supabase
     .from("leagues")
-    .select("id, name, owner_id, join_code")
+    .select("id, name, owner_id, join_code, entry_fee")
     .eq("id", id)
     .maybeSingle();
   if (!league) notFound();
@@ -142,6 +142,7 @@ export default async function LeaguePage({
         joinCode: league.join_code,
         isOwner: league.owner_id === user.id,
         memberCount: members?.length ?? 0,
+        entryFee: Number(league.entry_fee ?? 0),
       }}
       currentUserId={user.id}
       leaderboard={(board ?? []) as LeaderboardRow[]}

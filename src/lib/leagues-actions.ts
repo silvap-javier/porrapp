@@ -18,10 +18,12 @@ function generateCode(len = 6): string {
 }
 
 export async function createLeague(
-  name: string
+  name: string,
+  entryFee = 0
 ): Promise<ActionResult<{ leagueId: string }>> {
   const trimmed = name.trim();
   if (!trimmed) return { error: "name_required" };
+  const fee = Math.max(0, Number(entryFee) || 0);
 
   const supabase = await createClient();
   const {
@@ -34,7 +36,7 @@ export async function createLeague(
   for (let attempt = 0; attempt < 5 && !leagueId; attempt++) {
     const { data, error } = await supabase
       .from("leagues")
-      .insert({ name: trimmed, owner_id: user.id, join_code: generateCode() })
+      .insert({ name: trimmed, owner_id: user.id, join_code: generateCode(), entry_fee: fee })
       .select("id")
       .single();
 
@@ -131,6 +133,29 @@ export async function deleteLeague(leagueId: string): Promise<ActionResult> {
   if (error) return { error: "delete_failed" };
 
   revalidatePath("/dashboard");
+  return { ok: true };
+}
+
+export async function updateLeagueFee(
+  leagueId: string,
+  entryFee: number
+): Promise<ActionResult> {
+  const fee = Math.max(0, Number(entryFee) || 0);
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "not_authenticated" };
+
+  // RLS: solo el owner puede actualizar la liga.
+  const { error } = await supabase
+    .from("leagues")
+    .update({ entry_fee: fee })
+    .eq("id", leagueId);
+  if (error) return { error: "update_failed" };
+
+  revalidatePath(`/leagues/${leagueId}`);
   return { ok: true };
 }
 

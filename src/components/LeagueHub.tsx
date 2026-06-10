@@ -40,6 +40,7 @@ type League = {
   joinCode: string;
   isOwner: boolean;
   memberCount: number;
+  entryFee: number;
 };
 
 const TABS = ["ranking", "porrita", "mundial", "calendario", "chat"] as const;
@@ -91,6 +92,11 @@ export default function LeagueHub({
               <h1 className="text-xl font-bold text-foreground font-display truncate">{league.name}</h1>
               <p className="text-xs text-muted">
                 Mundial 2026 · 👥 {league.memberCount}
+                {league.entryFee > 0 && (
+                  <span className="text-secondary">
+                    {" "}· 💰 {(league.entryFee * league.memberCount).toLocaleString("es-ES")} €
+                  </span>
+                )}
               </p>
             </div>
           </div>
@@ -104,7 +110,13 @@ export default function LeagueHub({
 
         {showInfo && (
           <div className="mt-3 bg-surface border border-border rounded-2xl p-4 shadow-[var(--shadow-warm)]">
-            <LeagueActions leagueId={league.id} joinCode={league.joinCode} isOwner={league.isOwner} />
+            <LeagueActions
+              leagueId={league.id}
+              joinCode={league.joinCode}
+              isOwner={league.isOwner}
+              entryFee={league.entryFee}
+              memberCount={league.memberCount}
+            />
           </div>
         )}
       </header>
