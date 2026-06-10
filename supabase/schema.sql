@@ -2656,6 +2656,8 @@ $$ LANGUAGE sql STABLE SECURITY DEFINER;
 
 
 -- Desglose extra: macro + posiciones + pichichi
+-- (la 013 la creó con menos columnas; hay que recrearla)
+DROP FUNCTION IF EXISTS public.league_extra_breakdown(UUID);
 CREATE OR REPLACE FUNCTION public.league_extra_breakdown(p_league_id UUID)
 RETURNS TABLE (
   user_id UUID,
