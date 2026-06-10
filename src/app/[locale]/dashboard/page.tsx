@@ -159,13 +159,29 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      <Link
-        href="/reglas"
-        className="flex items-center justify-between bg-surface border border-border rounded-2xl p-4 hover:border-primary/40 transition-colors"
-      >
-        <span className="text-sm font-medium text-foreground">📖 {t("rules")}</span>
-        <span className="text-muted">›</span>
-      </Link>
+      {/* Accesos rápidos */}
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold text-foreground px-1">{t("quickAccess")}</h2>
+        <div className="grid grid-cols-2 gap-2">
+          <Tile href="/picks" emoji="🎯" title={t("tilePicks")} desc={t("tilePicksDesc")} />
+          <Tile href="/matches" emoji="⚽" title={t("tileMatches")} desc={t("tileMatchesDesc")} />
+          <Tile href="/resultados" emoji="📋" title={t("tileResults")} desc={t("tileResultsDesc")} />
+          <Tile href="/reglas" emoji="📖" title={t("rules")} desc={t("tileRulesDesc")} />
+        </div>
+      </section>
     </div>
+  );
+}
+
+function Tile({ href, emoji, title, desc }: { href: string; emoji: string; title: string; desc: string }) {
+  return (
+    <Link
+      href={href}
+      className="flex flex-col gap-1 bg-surface border border-border rounded-2xl p-4 hover:border-primary/40 transition-colors"
+    >
+      <span className="text-2xl">{emoji}</span>
+      <span className="text-sm font-semibold text-foreground leading-tight">{title}</span>
+      <span className="text-xs text-muted leading-tight">{desc}</span>
+    </Link>
   );
 }
