@@ -142,25 +142,24 @@ export default function MatchesView({ matches }: { matches: ViewMatch[] }) {
       {/* Lista */}
       <div className="space-y-3">
         {visible.map((m) => (
-          <div key={m.id}>
-            {stage === "group" && group === "all" && m.group_letter && (
-              <span className="text-xs text-muted ml-1">
-                {t("group")} {m.group_letter}
-              </span>
-            )}
-            <MatchCard
-              matchId={m.id}
-              home={m.home}
-              away={m.away}
-              kickoffAt={m.kickoff_at}
-              status={m.status}
-              homeScore={m.home_score}
-              awayScore={m.away_score}
-              initialHome={m.predHome}
-              initialAway={m.predAway}
-              venue={m.venue}
-            />
-          </div>
+          <MatchCard
+            key={m.id}
+            matchId={m.id}
+            home={m.home}
+            away={m.away}
+            kickoffAt={m.kickoff_at}
+            status={m.status}
+            homeScore={m.home_score}
+            awayScore={m.away_score}
+            initialHome={m.predHome}
+            initialAway={m.predAway}
+            venue={m.venue}
+            tag={
+              stage === "group" && group === "all" && m.group_letter
+                ? `${t("group")} ${m.group_letter}`
+                : undefined
+            }
+          />
         ))}
       </div>
     </div>

@@ -20,6 +20,7 @@ export default function MatchCard({
   initialHome,
   initialAway,
   venue,
+  tag,
 }: {
   matchId: string;
   home: Side;
@@ -31,6 +32,7 @@ export default function MatchCard({
   initialHome: number | null;
   initialAway: number | null;
   venue?: string | null;
+  tag?: string | null;
 }) {
   const t = useTranslations("matches");
   const tErr = useTranslations("errors");
@@ -72,85 +74,109 @@ export default function MatchCard({
     a !== "" &&
     (parseInt(h, 10) !== initialHome || parseInt(a, 10) !== initialAway);
 
+  const onScore = (setter: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setter(e.target.value);
+    if (saved) setSaved(false);
+  };
+  const inputClass =
+    "w-12 h-10 text-center text-base rounded-lg border border-border bg-background disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-primary/50";
+
   return (
     <div className="bg-surface border border-border rounded-2xl p-4 shadow-[var(--shadow-warm)]">
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-xs text-muted">
-          {formatKickoff(kickoffAt)}
-          {venue ? ` · ${venue}` : ""}
-        </span>
+      {/* Cabecera: badge grupo + estado */}
+      <div className="flex items-center justify-between gap-2 mb-1.5">
+        {tag ? (
+          <span className="text-[11px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+            {tag}
+          </span>
+        ) : (
+          <span />
+        )}
         {finished ? (
-          <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-            {t("final")} {homeScore}–{awayScore}
+          <span className="text-[11px] font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+            {t("final")}
           </span>
         ) : open ? (
-          <span className="text-xs font-medium text-secondary">{t("open")}</span>
+          <span className="text-[11px] font-medium text-secondary">{t("open")}</span>
         ) : (
-          <span className="text-xs font-medium text-muted">🔒 {t("locked")}</span>
+          <span className="text-[11px] font-medium text-muted">🔒 {t("locked")}</span>
         )}
       </div>
 
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex-1 text-right">
-          <span className="text-sm font-medium text-foreground">
-            {home.flag} {home.name}
-          </span>
-        </div>
+      {/* Meta: fecha · sede */}
+      <p className="text-xs text-muted mb-3 leading-snug">
+        {formatKickoff(kickoffAt)}
+        {venue ? <span className="block sm:inline sm:before:content-['_·_']">📍 {venue}</span> : null}
+      </p>
 
-        <div className="flex items-center gap-1.5">
-          <input
-            type="number"
-            min={0}
-            max={99}
-            inputMode="numeric"
-            value={h}
-            disabled={!open || isPending}
-            onChange={(e) => {
-              setH(e.target.value);
-              if (saved) setSaved(false);
-            }}
-            className="w-12 text-center px-2 py-1.5 rounded-lg border border-border bg-background disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-primary/50"
-            placeholder="-"
-          />
-          <span className="text-muted">–</span>
-          <input
-            type="number"
-            min={0}
-            max={99}
-            inputMode="numeric"
-            value={a}
-            disabled={!open || isPending}
-            onChange={(e) => {
-              setA(e.target.value);
-              if (saved) setSaved(false);
-            }}
-            className="w-12 text-center px-2 py-1.5 rounded-lg border border-border bg-background disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-primary/50"
-            placeholder="-"
-          />
-        </div>
-
-        <div className="flex-1 text-left">
-          <span className="text-sm font-medium text-foreground">
-            {away.name} {away.flag}
+      {/* Filas de equipos */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between gap-3">
+          <span className="flex items-center gap-2 min-w-0">
+            <span className="text-xl flex-shrink-0">{home.flag}</span>
+            <span className="text-sm font-medium text-foreground leading-tight">{home.name}</span>
           </span>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {finished && (
+              <span className="text-sm font-bold text-foreground tabular-nums w-4 text-center">
+                {homeScore}
+              </span>
+            )}
+            <input
+              type="number"
+              min={0}
+              max={99}
+              inputMode="numeric"
+              value={h}
+              disabled={!open || isPending}
+              onChange={onScore(setH)}
+              className={inputClass}
+              placeholder="-"
+            />
+          </div>
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <span className="flex items-center gap-2 min-w-0">
+            <span className="text-xl flex-shrink-0">{away.flag}</span>
+            <span className="text-sm font-medium text-foreground leading-tight">{away.name}</span>
+          </span>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {finished && (
+              <span className="text-sm font-bold text-foreground tabular-nums w-4 text-center">
+                {awayScore}
+              </span>
+            )}
+            <input
+              type="number"
+              min={0}
+              max={99}
+              inputMode="numeric"
+              value={a}
+              disabled={!open || isPending}
+              onChange={onScore(setA)}
+              className={inputClass}
+              placeholder="-"
+            />
+          </div>
         </div>
       </div>
 
-      <div className="flex items-center justify-between mt-3 min-h-6">
+      {/* Pie: puntos / tu pronóstico + Guardar */}
+      <div className="flex items-center justify-between gap-2 mt-3 min-h-8">
         <div className="text-xs">
           {points !== null && (
             <span
               className={`font-semibold px-2 py-0.5 rounded-full ${
-                points > 0
-                  ? "text-primary bg-primary/10"
-                  : "text-muted bg-surface-hover"
+                points > 0 ? "text-primary bg-primary/10" : "text-muted bg-surface-hover"
               }`}
             >
               +{points} {t("points")}
             </span>
           )}
           {!finished && hasPred && !dirty && (
-            <span className="text-muted">{t("yourPick")}: {initialHome}–{initialAway}</span>
+            <span className="text-muted">
+              {t("yourPick")}: {initialHome}–{initialAway}
+            </span>
           )}
         </div>
 
@@ -158,9 +184,9 @@ export default function MatchCard({
           <button
             onClick={save}
             disabled={isPending || !dirty}
-            className="text-xs bg-primary text-white px-4 py-1.5 rounded-full font-medium hover:bg-primary-dark transition-colors disabled:opacity-40"
+            className="text-sm bg-primary text-white px-5 py-1.5 rounded-full font-medium hover:bg-primary-dark transition-colors disabled:opacity-40 flex-shrink-0"
           >
-            {saved ? `✓ ${t("saved")}` : isPending ? t("saving") : t("save")}
+            {saved && !dirty ? `✓ ${t("saved")}` : isPending ? t("saving") : t("save")}
           </button>
         )}
       </div>

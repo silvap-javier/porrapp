@@ -136,24 +136,23 @@ export default function ResultsView({ matches }: { matches: ViewResult[] }) {
 
       <div className="space-y-3">
         {visible.map((m) => (
-          <div key={m.id}>
-            {stage === "group" && group === "all" && m.group_letter && (
-              <span className="text-xs text-muted ml-1">
-                {t("group")} {m.group_letter}
-              </span>
-            )}
-            <ResultCard
-              matchId={m.id}
-              home={m.home}
-              away={m.away}
-              kickoffAt={m.kickoff_at}
-              status={m.status}
-              homeScore={m.home_score}
-              awayScore={m.away_score}
-              setByName={m.setByName}
-              venue={m.venue}
-            />
-          </div>
+          <ResultCard
+            key={m.id}
+            matchId={m.id}
+            home={m.home}
+            away={m.away}
+            kickoffAt={m.kickoff_at}
+            status={m.status}
+            homeScore={m.home_score}
+            awayScore={m.away_score}
+            setByName={m.setByName}
+            venue={m.venue}
+            tag={
+              stage === "group" && group === "all" && m.group_letter
+                ? `${t("group")} ${m.group_letter}`
+                : undefined
+            }
+          />
         ))}
       </div>
     </div>

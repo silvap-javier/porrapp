@@ -18,6 +18,7 @@ export default function ResultCard({
   awayScore,
   setByName,
   venue,
+  tag,
 }: {
   matchId: string;
   home: Side;
@@ -28,6 +29,7 @@ export default function ResultCard({
   awayScore: number | null;
   setByName: string | null;
   venue?: string | null;
+  tag?: string | null;
 }) {
   const t = useTranslations("results");
   const tErr = useTranslations("errors");
@@ -64,27 +66,39 @@ export default function ResultCard({
     });
   };
 
+  const inputClass =
+    "w-12 h-10 text-center text-base rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/50";
+
   return (
     <div className="bg-surface border border-border rounded-2xl p-4 shadow-[var(--shadow-warm)]">
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-xs text-muted">
-          {formatKickoff(kickoffAt)}
-          {venue ? ` · ${venue}` : ""}
-        </span>
+      <div className="flex items-center justify-between gap-2 mb-1.5">
+        {tag ? (
+          <span className="text-[11px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+            {tag}
+          </span>
+        ) : (
+          <span />
+        )}
         {status === "finished" ? (
-          <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+          <span className="text-[11px] font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">
             {t("finished")}
           </span>
         ) : (
-          <span className="text-xs font-medium text-muted">{t("pending")}</span>
+          <span className="text-[11px] font-medium text-muted">{t("pending")}</span>
         )}
       </div>
 
-      <div className="flex items-center justify-between gap-3">
-        <span className="flex-1 text-right text-sm font-medium text-foreground">
-          {home.flag} {home.name}
-        </span>
-        <div className="flex items-center gap-1.5">
+      <p className="text-xs text-muted mb-3 leading-snug">
+        {formatKickoff(kickoffAt)}
+        {venue ? <span className="block sm:inline sm:before:content-['_·_']">📍 {venue}</span> : null}
+      </p>
+
+      <div className="space-y-2">
+        <div className="flex items-center justify-between gap-3">
+          <span className="flex items-center gap-2 min-w-0">
+            <span className="text-xl flex-shrink-0">{home.flag}</span>
+            <span className="text-sm font-medium text-foreground leading-tight">{home.name}</span>
+          </span>
           <input
             type="number"
             min={0}
@@ -93,10 +107,15 @@ export default function ResultCard({
             value={h}
             disabled={isPending}
             onChange={(e) => setH(e.target.value)}
-            className="w-12 text-center px-2 py-1.5 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
+            className={inputClass}
             placeholder="-"
           />
-          <span className="text-muted">–</span>
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <span className="flex items-center gap-2 min-w-0">
+            <span className="text-xl flex-shrink-0">{away.flag}</span>
+            <span className="text-sm font-medium text-foreground leading-tight">{away.name}</span>
+          </span>
           <input
             type="number"
             min={0}
@@ -105,25 +124,22 @@ export default function ResultCard({
             value={a}
             disabled={isPending}
             onChange={(e) => setA(e.target.value)}
-            className="w-12 text-center px-2 py-1.5 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
+            className={inputClass}
             placeholder="-"
           />
         </div>
-        <span className="flex-1 text-left text-sm font-medium text-foreground">
-          {away.name} {away.flag}
-        </span>
       </div>
 
-      <div className="flex items-center justify-between mt-3">
-        <span className="text-xs text-muted">
+      <div className="flex items-center justify-between gap-2 mt-3 min-h-8">
+        <span className="text-xs text-muted truncate">
           {setByName ? `${t("setBy")} ${setByName}` : ""}
         </span>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           {status === "finished" && (
             <button
               onClick={clear}
               disabled={isPending}
-              className="text-xs text-muted hover:text-red-600 px-3 py-1.5 transition-colors disabled:opacity-40"
+              className="text-xs text-muted hover:text-red-600 px-2 py-1.5 transition-colors disabled:opacity-40"
             >
               {t("reopen")}
             </button>
@@ -131,7 +147,7 @@ export default function ResultCard({
           <button
             onClick={save}
             disabled={isPending || h === "" || a === ""}
-            className="text-xs bg-primary text-white px-4 py-1.5 rounded-full font-medium hover:bg-primary-dark transition-colors disabled:opacity-40"
+            className="text-sm bg-primary text-white px-5 py-1.5 rounded-full font-medium hover:bg-primary-dark transition-colors disabled:opacity-40"
           >
             {isPending ? t("saving") : t("save")}
           </button>
