@@ -1,8 +1,7 @@
 -- ============================================================================
--- PorrApp — schema completo (001→008). Pegar en el SQL Editor de Supabase.
--- Idempotente: re-ejecutable. 008 fija el fixture OFICIAL de FIFA.
+-- PorrApp — schema completo (001→014). Pegar en el SQL Editor de Supabase.
+-- Idempotente: re-ejecutable.
 -- ============================================================================
-
 
 -- >>>>>>>>>>>>>>>>>>>>>>>>>>>>  001_profiles.sql  <<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1015,4 +1014,253 @@ INSERT INTO public.matches (match_number, stage, home_slot, away_slot, kickoff_a
   (103, 'third', 'Perdedor Partido 101', 'Perdedor Partido 102', '2026-07-18T20:00:00.000Z', 'Estadio Miami'),
   (104, 'final', 'Ganador Partido 101', 'Ganador Partido 102', '2026-07-19T20:00:00.000Z', 'Estadio Nueva York Nueva Jersey');
 
+
+
+-- >>>>>>>>>>>>>>>>>>>>>>>>>>>>  009_phase_breakdown.sql  <<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+-- ============================================================================
+-- PorrApp — 009_phase_breakdown
+-- Desglose de puntos por FASE para el ranking (exactos / aciertos / puntos por
+-- usuario y por etapa). SECURITY DEFINER + restringido a miembros de la liga.
+-- ============================================================================
+
+CREATE OR REPLACE FUNCTION public.league_phase_breakdown(p_league_id UUID)
+RETURNS TABLE (
+  user_id UUID,
+  stage TEXT,
+  exact_count INT,
+  result_count INT,
+  points INT
+) AS $$
+  SELECT
+    lm.user_id,
+    m.stage,
+    SUM(CASE WHEN mp.home_score = m.home_score AND mp.away_score = m.away_score
+             THEN 1 ELSE 0 END)::INT AS exact_count,
+    SUM(CASE WHEN NOT (mp.home_score = m.home_score AND mp.away_score = m.away_score)
+              AND sign(mp.home_score - mp.away_score) = sign(m.home_score - m.away_score)
+             THEN 1 ELSE 0 END)::INT AS result_count,
+    COALESCE(SUM(public.score_match(mp.home_score, mp.away_score, m.home_score, m.away_score)), 0)::INT AS points
+  FROM public.league_members lm
+  JOIN public.match_predictions mp ON mp.user_id = lm.user_id
+  JOIN public.matches m ON m.id = mp.match_id AND m.status = 'finished'
+  WHERE lm.league_id = p_league_id
+    AND public.is_league_member(p_league_id, auth.uid())
+  GROUP BY lm.user_id, m.stage;
+$$ LANGUAGE sql STABLE SECURITY DEFINER;
+
+
+-- >>>>>>>>>>>>>>>>>>>>>>>>>>>>  010_chat.sql  <<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+-- ============================================================================
+-- PorrApp — 010_chat
+-- Chat interno por liga. Solo miembros leen/escriben en su liga.
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS league_messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  league_id UUID NOT NULL REFERENCES leagues(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  body TEXT NOT NULL CHECK (length(trim(body)) > 0 AND length(body) <= 2000),
+  created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_league_messages_league
+  ON league_messages(league_id, created_at);
+
+ALTER TABLE league_messages ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Messages readable by league members" ON league_messages;
+DROP POLICY IF EXISTS "Members can post messages" ON league_messages;
+
+CREATE POLICY "Messages readable by league members"
+  ON league_messages FOR SELECT
+  USING (public.is_league_member(league_id, auth.uid()));
+
+CREATE POLICY "Members can post messages"
+  ON league_messages FOR INSERT
+  WITH CHECK (public.is_league_member(league_id, auth.uid()) AND auth.uid() = user_id);
+
+-- Habilita Realtime (idempotente: ignora si ya está en la publicación)
+DO $$
+BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.league_messages;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+
+-- >>>>>>>>>>>>>>>>>>>>>>>>>>>>  011_league_fee.sql  <<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+-- ============================================================================
+-- PorrApp — 011_league_fee
+-- Cuota de entrada por liga (bote). Informativa: bote = cuota × nº miembros.
+-- La edita el owner (la política UPDATE de leagues ya es owner-only).
+-- ============================================================================
+
+ALTER TABLE public.leagues
+  ADD COLUMN IF NOT EXISTS entry_fee NUMERIC NOT NULL DEFAULT 0 CHECK (entry_fee >= 0);
+
+
+-- >>>>>>>>>>>>>>>>>>>>>>>>>>>>  012_group_positions.sql  <<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+-- ============================================================================
+-- PorrApp — 012_group_positions
+-- Pronóstico de 1º y 2º de cada grupo. Acertar 1º = 3 pts, 2º = 2 pts.
+-- El resultado real se deriva de la clasificación (solo grupos ya completos).
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS group_position_predictions (
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  group_letter TEXT NOT NULL,
+  first_team_id UUID REFERENCES teams(id) ON DELETE SET NULL,
+  second_team_id UUID REFERENCES teams(id) ON DELETE SET NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  PRIMARY KEY (user_id, group_letter)
+);
+
+ALTER TABLE group_position_predictions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Own group picks or after start readable" ON group_position_predictions;
+DROP POLICY IF EXISTS "Insert own group picks" ON group_position_predictions;
+DROP POLICY IF EXISTS "Update own group picks" ON group_position_predictions;
+
+CREATE POLICY "Own group picks or after start readable"
+  ON group_position_predictions FOR SELECT
+  USING (auth.uid() = user_id OR public.tournament_started());
+
+CREATE POLICY "Insert own group picks"
+  ON group_position_predictions FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Update own group picks"
+  ON group_position_predictions FOR UPDATE
+  USING (auth.uid() = user_id);
+
+
+-- Clasificación real por grupo (solo grupos con TODOS sus partidos finalizados).
+CREATE OR REPLACE FUNCTION public.group_standings()
+RETURNS TABLE (group_letter TEXT, team_id UUID, pos INT) AS $$
+  WITH gm AS (
+    SELECT m.group_letter AS gl, t.id AS team_id,
+      CASE WHEN m.home_team_id = t.id THEN m.home_score ELSE m.away_score END AS gf,
+      CASE WHEN m.home_team_id = t.id THEN m.away_score ELSE m.home_score END AS ga
+    FROM public.matches m
+    JOIN public.teams t ON t.id IN (m.home_team_id, m.away_team_id)
+    WHERE m.stage = 'group' AND m.status = 'finished'
+      AND m.home_score IS NOT NULL AND m.away_score IS NOT NULL
+  ),
+  agg AS (
+    SELECT gl, team_id,
+      SUM(CASE WHEN gf > ga THEN 3 WHEN gf = ga THEN 1 ELSE 0 END) AS pts,
+      SUM(gf - ga) AS dg,
+      SUM(gf) AS gf_total
+    FROM gm GROUP BY gl, team_id
+  ),
+  complete AS (
+    SELECT group_letter AS gl
+    FROM public.matches
+    WHERE stage = 'group'
+    GROUP BY group_letter
+    HAVING count(*) = count(*) FILTER (WHERE status = 'finished')
+  )
+  SELECT a.gl, a.team_id,
+    ROW_NUMBER() OVER (PARTITION BY a.gl ORDER BY a.pts DESC, a.dg DESC, a.gf_total DESC)::INT
+  FROM agg a
+  JOIN complete c ON c.gl = a.gl;
+$$ LANGUAGE sql STABLE SECURITY DEFINER;
+
+
+-- Puntos por acertar 1º/2º de grupo.
+CREATE OR REPLACE FUNCTION public.group_position_points(p_user_id UUID)
+RETURNS INT AS $$
+  SELECT COALESCE(SUM(
+    (CASE WHEN gp.first_team_id IS NOT NULL AND gp.first_team_id = s1.team_id THEN 3 ELSE 0 END) +
+    (CASE WHEN gp.second_team_id IS NOT NULL AND gp.second_team_id = s2.team_id THEN 2 ELSE 0 END)
+  ), 0)::INT
+  FROM public.group_position_predictions gp
+  LEFT JOIN public.group_standings() s1 ON s1.group_letter = gp.group_letter AND s1.pos = 1
+  LEFT JOIN public.group_standings() s2 ON s2.group_letter = gp.group_letter AND s2.pos = 2
+  WHERE gp.user_id = p_user_id;
+$$ LANGUAGE sql STABLE SECURITY DEFINER;
+
+
+-- Recalcula el ranking incluyendo macro + posiciones de grupo.
+CREATE OR REPLACE FUNCTION public.league_leaderboard(p_league_id UUID)
+RETURNS TABLE (
+  user_id UUID,
+  name TEXT,
+  email TEXT,
+  total_points INT,
+  match_points INT,
+  macro_points INT,
+  exact_count INT,
+  result_count INT,
+  predicted_count INT
+) AS $$
+  SELECT
+    p.id,
+    p.name,
+    p.email,
+    (mp.total + public.macro_points(p.id) + public.group_position_points(p.id))::INT AS total_points,
+    mp.total AS match_points,
+    (public.macro_points(p.id) + public.group_position_points(p.id))::INT AS macro_points,
+    mp.exact_count,
+    mp.result_count,
+    mp.predicted_count
+  FROM public.league_members lm
+  JOIN public.profiles p ON p.id = lm.user_id
+  CROSS JOIN LATERAL public.match_points(p.id) mp
+  WHERE lm.league_id = p_league_id
+    AND public.is_league_member(p_league_id, auth.uid())
+  ORDER BY total_points DESC, mp.exact_count DESC, p.name ASC;
+$$ LANGUAGE sql STABLE SECURITY DEFINER;
+
+
+-- >>>>>>>>>>>>>>>>>>>>>>>>>>>>  013_extra_breakdown.sql  <<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+-- ============================================================================
+-- PorrApp — 013_extra_breakdown
+-- Puntos extra por miembro (picks de torneo + posiciones de grupo) para el
+-- desglose del Ranking. Restringido a miembros de la liga.
+-- ============================================================================
+
+CREATE OR REPLACE FUNCTION public.league_extra_breakdown(p_league_id UUID)
+RETURNS TABLE (
+  user_id UUID,
+  macro_pts INT,
+  group_pts INT
+) AS $$
+  SELECT
+    lm.user_id,
+    public.macro_points(lm.user_id),
+    public.group_position_points(lm.user_id)
+  FROM public.league_members lm
+  WHERE lm.league_id = p_league_id
+    AND public.is_league_member(p_league_id, auth.uid());
+$$ LANGUAGE sql STABLE SECURITY DEFINER;
+
+
+-- >>>>>>>>>>>>>>>>>>>>>>>>>>>>  014_players.sql  <<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+-- ============================================================================
+-- PorrApp — 014_players
+-- Jugadores (para el pichichi de grupo). El grupo se deriva de su selección.
+-- Tabla lista para sembrar; el pronóstico de goleador por grupo y su scoring
+-- se añaden cuando esté cargado el listado.
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS players (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  team_id UUID NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_players_team ON players(team_id);
+
+ALTER TABLE players ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Players readable by authenticated" ON players;
+CREATE POLICY "Players readable by authenticated"
+  ON players FOR SELECT USING (auth.uid() IS NOT NULL);
 
