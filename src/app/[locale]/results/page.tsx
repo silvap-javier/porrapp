@@ -3,6 +3,8 @@ import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import OutcomeForm from "@/components/OutcomeForm";
 import ResultsView, { type ViewResult } from "@/components/ResultsView";
+import GroupScorerForm from "@/components/GroupScorerForm";
+import { buildGroupPlayers, type PlayerRow } from "@/lib/group-players";
 import { sideLabel } from "@/lib/format";
 import type { Stage, Team } from "@/lib/types";
 
@@ -69,6 +71,19 @@ export default async function ResultsPage() {
     .eq("id", 1)
     .maybeSingle();
 
+  // Pichichi de grupo: jugadores agrupados + goleador real ya cargado
+  const { data: playersData } = await supabase
+    .from("players")
+    .select("id, name, position, team:teams(name, group_letter, flag_emoji)")
+    .order("name", { ascending: true });
+  const groupPlayers = buildGroupPlayers((playersData ?? []) as unknown as PlayerRow[]);
+
+  const { data: scorers } = await supabase
+    .from("group_top_scorer")
+    .select("group_letter, player_id");
+  const initialScorers: Record<string, string> = {};
+  for (const s of scorers ?? []) if (s.player_id) initialScorers[s.group_letter] = s.player_id;
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 space-y-8">
       <header>
@@ -89,6 +104,12 @@ export default async function ResultsPage() {
           initialRunnerup={outcome?.runnerup_team_id ?? null}
           initialTopScorer={outcome?.top_scorer ?? null}
         />
+      </section>
+
+      {/* Pichichi de grupo (resultado real) */}
+      <section className="bg-surface border border-border rounded-2xl p-5 shadow-[var(--shadow-warm)] space-y-3">
+        <h2 className="font-semibold text-foreground">{t("groupScorers")}</h2>
+        <GroupScorerForm groups={groupPlayers} initial={initialScorers} mode="outcome" />
       </section>
 
       {/* Resultados de partidos */}

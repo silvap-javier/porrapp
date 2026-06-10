@@ -66,3 +66,9 @@ export const STAGE_LABELS: Record<Stage, string> = {
 
 // Minutos antes del kickoff en que se cierran los pronósticos.
 export const LOCK_MINUTES = 60;
+
+export type GroupPlayer = { id: string; name: string; position: string | null };
+export type GroupPlayersData = {
+  letter: string;
+  teams: { name: string; flag: string; players: GroupPlayer[] }[];
+};

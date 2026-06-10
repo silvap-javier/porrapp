@@ -3,6 +3,8 @@ import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import MacroPicksForm from "@/components/MacroPicksForm";
 import GroupPositionsForm from "@/components/GroupPositionsForm";
+import GroupScorerForm from "@/components/GroupScorerForm";
+import { buildGroupPlayers, type PlayerRow } from "@/lib/group-players";
 import type { Team } from "@/lib/types";
 
 export default async function PicksPage() {
@@ -45,6 +47,20 @@ export default async function PicksPage() {
     initialGroups[gp.group_letter] = { first: gp.first_team_id, second: gp.second_team_id };
   }
 
+  // Jugadores por grupo (para el pichichi) + picks del usuario
+  const { data: playersData } = await supabase
+    .from("players")
+    .select("id, name, position, team:teams(name, group_letter, flag_emoji)")
+    .order("name", { ascending: true });
+  const groupPlayers = buildGroupPlayers((playersData ?? []) as unknown as PlayerRow[]);
+
+  const { data: pichichiPicks } = await supabase
+    .from("group_top_scorer_predictions")
+    .select("group_letter, player_id")
+    .eq("user_id", user.id);
+  const initialPichichi: Record<string, string> = {};
+  for (const r of pichichiPicks ?? []) if (r.player_id) initialPichichi[r.group_letter] = r.player_id;
+
   const { data: started } = await supabase.rpc("tournament_started");
   const locked = started === true;
 
@@ -70,6 +86,12 @@ export default async function PicksPage() {
         <h2 className="text-lg font-semibold text-foreground">{t("groupsSection")}</h2>
         <p className="text-sm text-muted">{t("groupsHint")}</p>
         <GroupPositionsForm groups={groups} initial={initialGroups} locked={locked} />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold text-foreground">{t("pichichiSection")}</h2>
+        <p className="text-sm text-muted">{t("pichichiHint")}</p>
+        <GroupScorerForm groups={groupPlayers} initial={initialPichichi} locked={locked} mode="pick" />
       </section>
     </div>
   );

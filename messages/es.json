@@ -155,7 +155,8 @@
     "matchesPlayed": "partidos jugados",
     "group": "Grupo",
     "macroPicks": "Picks de torneo",
-    "groupPicks": "1º y 2º de grupo"
+    "groupPicks": "1º y 2º de grupo",
+    "pichichiPicks": "Pichichi de grupo"
   },
   "chat": {
     "empty": "Aún no hay mensajes. ¡Rompe el hielo! 👋",
@@ -185,6 +186,7 @@
     "champion": "Campeón",
     "runnerup": "Subcampeón",
     "topScorer": "Goleador",
+    "groupScorers": "Pichichi de cada grupo",
     "finished": "Finalizado",
     "pending": "Pendiente",
     "loadedCount": "resultados cargados",
@@ -210,6 +212,9 @@
     "first": "1º",
     "second": "2º",
     "group": "Grupo",
+    "pichichiSection": "Pichichi de cada grupo",
+    "pichichiHint": "Acierta el máximo goleador de cada grupo (3 pts).",
+    "choosePlayer": "Elige un jugador",
     "lockedNotice": "Los picks de torneo ya están cerrados (60 min antes del primer partido).",
     "save": "Guardar picks",
     "saving": "Guardando…",

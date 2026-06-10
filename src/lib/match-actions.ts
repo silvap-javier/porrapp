@@ -144,3 +144,35 @@ export async function setTournamentOutcome(input: {
   revalidatePath("/dashboard");
   return { ok: true };
 }
+
+/** Goleador (pichichi) real de cada grupo, para puntuar los picks. */
+export async function setGroupTopScorers(
+  picks: { group: string; playerId: string | null }[]
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "not_authenticated" };
+
+  const rows = picks
+    .filter((p) => p.playerId)
+    .map((p) => ({
+      group_letter: p.group,
+      player_id: p.playerId,
+      set_by: user.id,
+      updated_at: new Date().toISOString(),
+    }));
+
+  if (rows.length === 0) return { ok: true };
+
+  const { error } = await supabase
+    .from("group_top_scorer")
+    .upsert(rows, { onConflict: "group_letter" });
+
+  if (error) return { error: "save_failed" };
+
+  revalidatePath("/results");
+  revalidatePath("/dashboard");
+  return { ok: true };
+}

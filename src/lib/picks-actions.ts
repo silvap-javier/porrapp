@@ -78,3 +78,37 @@ export async function saveGroupPositions(
   revalidatePath("/picks");
   return { ok: true };
 }
+
+export async function saveGroupTopScorers(
+  picks: { group: string; playerId: string | null }[]
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "not_authenticated" };
+
+  if (await tournamentStarted(supabase)) {
+    return { error: "tournament_started" };
+  }
+
+  const rows = picks
+    .filter((p) => p.playerId)
+    .map((p) => ({
+      user_id: user.id,
+      group_letter: p.group,
+      player_id: p.playerId,
+      updated_at: new Date().toISOString(),
+    }));
+
+  if (rows.length === 0) return { ok: true };
+
+  const { error } = await supabase
+    .from("group_top_scorer_predictions")
+    .upsert(rows, { onConflict: "user_id,group_letter" });
+
+  if (error) return { error: "save_failed" };
+
+  revalidatePath("/picks");
+  return { ok: true };
+}

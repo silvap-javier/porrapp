@@ -22,6 +22,7 @@ export type ExtraRow = {
   user_id: string;
   macro_pts: number;
   group_pts: number;
+  pichichi_pts: number;
 };
 
 export type GroupStanding = {
@@ -277,6 +278,12 @@ function RankingTab({
                           <span className="flex-1 text-foreground">{t("groupPicks")}</span>
                           <span className="font-semibold text-foreground tabular-nums w-14 text-right">
                             {ex?.group_pts ?? 0} / 60
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs">
+                          <span className="flex-1 text-foreground">{t("pichichiPicks")}</span>
+                          <span className="font-semibold text-foreground tabular-nums w-14 text-right">
+                            {ex?.pichichi_pts ?? 0} / 36
                           </span>
                         </div>
                       </>

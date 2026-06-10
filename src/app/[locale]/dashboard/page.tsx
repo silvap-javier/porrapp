@@ -38,8 +38,9 @@ export default async function DashboardPage() {
   const { data: mp } = await supabase.rpc("match_points", { p_user_id: user.id });
   const { data: macro } = await supabase.rpc("macro_points", { p_user_id: user.id });
   const { data: groupPts } = await supabase.rpc("group_position_points", { p_user_id: user.id });
+  const { data: pichichiPts } = await supabase.rpc("group_pichichi_points", { p_user_id: user.id });
   const matchStats = Array.isArray(mp) && mp[0] ? mp[0] : { total: 0 };
-  const totalPoints = (matchStats.total ?? 0) + (macro ?? 0) + (groupPts ?? 0);
+  const totalPoints = (matchStats.total ?? 0) + (macro ?? 0) + (groupPts ?? 0) + (pichichiPts ?? 0);
 
   const { count: predCount } = await supabase
     .from("match_predictions")
