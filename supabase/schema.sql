@@ -1,5 +1,5 @@
 -- ============================================================================
--- PorrApp — schema completo (001→014). Pegar en el SQL Editor de Supabase.
+-- PorrApp — schema completo (001→015). Pegar en el SQL Editor de Supabase.
 -- Idempotente: re-ejecutable.
 -- ============================================================================
 
@@ -1110,32 +1110,35 @@ ALTER TABLE public.leagues
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS group_position_predictions (
-  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  group_letter TEXT NOT NULL,
-  first_team_id UUID REFERENCES teams(id) ON DELETE SET NULL,
-  second_team_id UUID REFERENCES teams(id) ON DELETE SET NULL,
-  updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
-  PRIMARY KEY (user_id, group_letter)
+    user_id UUID NOT NULL REFERENCES profiles (id) ON DELETE CASCADE,
+    group_letter TEXT NOT NULL,
+    first_team_id UUID REFERENCES teams (id) ON DELETE SET NULL,
+    second_team_id UUID REFERENCES teams (id) ON DELETE SET NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    PRIMARY KEY (user_id, group_letter)
 );
 
 ALTER TABLE group_position_predictions ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Own group picks or after start readable" ON group_position_predictions;
+
 DROP POLICY IF EXISTS "Insert own group picks" ON group_position_predictions;
+
 DROP POLICY IF EXISTS "Update own group picks" ON group_position_predictions;
 
-CREATE POLICY "Own group picks or after start readable"
-  ON group_position_predictions FOR SELECT
-  USING (auth.uid() = user_id OR public.tournament_started());
+CREATE POLICY "Own group picks or after start readable" ON group_position_predictions FOR
+SELECT USING (
+        auth.uid () = user_id
+        OR public.tournament_started ()
+    );
 
-CREATE POLICY "Insert own group picks"
-  ON group_position_predictions FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Insert own group picks" ON group_position_predictions FOR INSERT
+WITH
+    CHECK (auth.uid () = user_id);
 
-CREATE POLICY "Update own group picks"
-  ON group_position_predictions FOR UPDATE
-  USING (auth.uid() = user_id);
-
+CREATE POLICY "Update own group picks" ON group_position_predictions
+FOR UPDATE
+    USING (auth.uid () = user_id);
 
 -- Clasificación real por grupo (solo grupos con TODOS sus partidos finalizados).
 CREATE OR REPLACE FUNCTION public.group_standings()
@@ -1169,7 +1172,6 @@ RETURNS TABLE (group_letter TEXT, team_id UUID, pos INT) AS $$
   JOIN complete c ON c.gl = a.gl;
 $$ LANGUAGE sql STABLE SECURITY DEFINER;
 
-
 -- Puntos por acertar 1º/2º de grupo.
 CREATE OR REPLACE FUNCTION public.group_position_points(p_user_id UUID)
 RETURNS INT AS $$
@@ -1182,7 +1184,6 @@ RETURNS INT AS $$
   LEFT JOIN public.group_standings() s2 ON s2.group_letter = gp.group_letter AND s2.pos = 2
   WHERE gp.user_id = p_user_id;
 $$ LANGUAGE sql STABLE SECURITY DEFINER;
-
 
 -- Recalcula el ranking incluyendo macro + posiciones de grupo.
 CREATE OR REPLACE FUNCTION public.league_leaderboard(p_league_id UUID)
@@ -1214,7 +1215,6 @@ RETURNS TABLE (
     AND public.is_league_member(p_league_id, auth.uid())
   ORDER BY total_points DESC, mp.exact_count DESC, p.name ASC;
 $$ LANGUAGE sql STABLE SECURITY DEFINER;
-
 
 -- >>>>>>>>>>>>>>>>>>>>>>>>>>>>  013_extra_breakdown.sql  <<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -1263,4 +1263,16 @@ ALTER TABLE players ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Players readable by authenticated" ON players;
 CREATE POLICY "Players readable by authenticated"
   ON players FOR SELECT USING (auth.uid() IS NOT NULL);
+
+
+-- >>>>>>>>>>>>>>>>>>>>>>>>>>>>  015_players_extra.sql  <<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+-- ============================================================================
+-- PorrApp — 015_players_extra
+-- Amplía players con posición, dorsal y club (máxima info del scraper).
+-- ============================================================================
+
+ALTER TABLE public.players ADD COLUMN IF NOT EXISTS position TEXT;
+ALTER TABLE public.players ADD COLUMN IF NOT EXISTS shirt_number INT;
+ALTER TABLE public.players ADD COLUMN IF NOT EXISTS club TEXT;
 
