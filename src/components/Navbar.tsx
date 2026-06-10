@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { useTranslations } from "next-intl";
+import NotificationBell from "./NotificationBell";
 
 export default function Navbar() {
   const t = useTranslations("nav");
@@ -70,6 +71,7 @@ export default function Navbar() {
             >
               {t("logout")}
             </button>
+            <NotificationBell />
             <Link
               href="/settings"
               className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center text-sm font-semibold text-primary-dark hover:bg-primary/25 transition-colors flex-shrink-0"

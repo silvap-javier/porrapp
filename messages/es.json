@@ -162,6 +162,18 @@
     "empty": "Aún no hay mensajes. ¡Rompe el hielo! 👋",
     "placeholder": "Escribe un mensaje… usa @ para mencionar"
   },
+  "notif": {
+    "title": "Notificaciones",
+    "empty": "Todo al día ✅",
+    "pending": "Te faltan {count} pronósticos por hacer",
+    "pendingIcon": "⏰",
+    "mentions": "{count} menciones nuevas en el chat",
+    "mentionsIcon": "💬",
+    "results": "{count} resultados nuevos cargados",
+    "resultsIcon": "✅",
+    "members": "{count} nuevos miembros en tu liga",
+    "membersIcon": "👋"
+  },
   "porrita": {
     "predictions": "predicciones",
     "group": "Grupo",
