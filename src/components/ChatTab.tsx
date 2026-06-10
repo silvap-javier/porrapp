@@ -47,7 +47,7 @@ export default function ChatTab({
   const append = (msg: ChatMessage) =>
     setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]));
 
-  // Realtime
+  // Realtime + polling de respaldo (por si Realtime no está habilitado).
   useEffect(() => {
     const supabase = createClient();
     const channel = supabase
@@ -58,8 +58,26 @@ export default function ChatTab({
         (payload) => append(payload.new as ChatMessage)
       )
       .subscribe();
+
+    const poll = setInterval(async () => {
+      const { data } = await supabase
+        .from("league_messages")
+        .select("id, user_id, body, created_at")
+        .eq("league_id", leagueId)
+        .order("created_at", { ascending: true })
+        .limit(100);
+      if (data) {
+        setMessages((prev) => {
+          const seen = new Set(prev.map((m) => m.id));
+          const fresh = (data as ChatMessage[]).filter((m) => !seen.has(m.id));
+          return fresh.length ? [...prev, ...fresh] : prev;
+        });
+      }
+    }, 8000);
+
     return () => {
       supabase.removeChannel(channel);
+      clearInterval(poll);
     };
   }, [leagueId]);
 
@@ -99,7 +117,7 @@ export default function ChatTab({
     });
   };
 
-  const renderBody = (body: string) => {
+  const renderBody = (body: string, mine: boolean) => {
     if (!mentionRe) return body;
     const parts: (string | { m: string })[] = [];
     let last = 0;
@@ -110,11 +128,13 @@ export default function ChatTab({
       return match;
     });
     if (last < body.length) parts.push(body.slice(last));
+    // En mi burbuja (verde) la mención va subrayada en blanco; en ajena, verde.
+    const mentionClass = mine ? "font-semibold underline" : "font-semibold text-primary";
     return parts.map((p, i) =>
       typeof p === "string" ? (
         <span key={i}>{p}</span>
       ) : (
-        <span key={i} className="font-semibold text-primary">{p.m}</span>
+        <span key={i} className={mentionClass}>{p.m}</span>
       )
     );
   };
@@ -142,7 +162,7 @@ export default function ChatTab({
                     <p className="text-[11px] font-semibold text-secondary mb-0.5">{nameOf(m.user_id)}</p>
                   )}
                   <p className="text-sm whitespace-pre-wrap break-words leading-snug">
-                    {renderBody(m.body)}
+                    {renderBody(m.body, mine)}
                   </p>
                   <p className={`text-[10px] mt-0.5 ${mine ? "text-white/70" : "text-muted"}`}>
                     {timeFmt(m.created_at)}
