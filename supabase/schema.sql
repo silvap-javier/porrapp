@@ -1221,6 +1221,9 @@ $$ LANGUAGE sql STABLE SECURITY DEFINER;
 -- desglose del Ranking. Restringido a miembros de la liga.
 -- ============================================================================
 
+-- DROP previo: una versión posterior (018) añade más columnas; sin el DROP,
+-- re-correr el schema falla con "cannot change return type of existing function".
+DROP FUNCTION IF EXISTS public.league_extra_breakdown(UUID);
 CREATE OR REPLACE FUNCTION public.league_extra_breakdown(p_league_id UUID)
 RETURNS TABLE (
   user_id UUID,
