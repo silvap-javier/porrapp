@@ -121,7 +121,7 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-2 gap-2">
           <Tile href="/picks" emoji="🎯" title={t("tilePicks")} desc={t("tilePicksDesc")} />
           <Tile href="/matches" emoji="⚽" title={t("tileMatches")} desc={t("tileMatchesDesc")} />
-          <Tile href="/resultados" emoji="📋" title={t("tileResults")} desc={t("tileResultsDesc")} />
+          <Tile href="/results" emoji="📋" title={t("tileResults")} desc={t("tileResultsDesc")} />
           <Tile href="/reglas" emoji="📖" title={t("rules")} desc={t("tileRulesDesc")} />
         </div>
       </section>

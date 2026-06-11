@@ -8,7 +8,7 @@ import { getNotifications, markNotificationsSeen, type Notif } from "@/lib/notif
 const HREF: Record<Notif["type"], string> = {
   pending: "/matches",
   mentions: "/dashboard",
-  results: "/resultados",
+  results: "/results",
   members: "/dashboard",
 };
 
