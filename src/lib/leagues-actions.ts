@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { sendPushToUsers } from "@/lib/push";
 import type { ActionResult } from "@/lib/types";
 
 // Sin caracteres ambiguos (0/O, 1/I) para que el código se dicte fácil.
@@ -86,6 +87,24 @@ export async function joinLeague(
   if (insertErr) {
     if (insertErr.code === "23505") return { error: "already_member" };
     return { error: "join_failed" };
+  }
+
+  // Aviso push al owner de que entró un nuevo miembro. Best-effort.
+  try {
+    const [{ data: league }, { data: me }] = await Promise.all([
+      supabase.from("leagues").select("name, owner_id").eq("id", leagueId).maybeSingle(),
+      supabase.from("profiles").select("name").eq("id", user.id).maybeSingle(),
+    ]);
+    if (league?.owner_id && league.owner_id !== user.id) {
+      await sendPushToUsers([league.owner_id], {
+        title: `👋 ${league.name ?? "Tu liga"}`,
+        body: `${(me?.name || "Alguien").trim()} se unió a la liga`,
+        url: "/dashboard",
+        tag: `member-${leagueId}`,
+      });
+    }
+  } catch {
+    // no bloquear el alta por push
   }
 
   revalidatePath("/dashboard");

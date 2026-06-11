@@ -1,8 +1,58 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
+import { sendPushToUsers } from "@/lib/push";
 import type { ActionResult } from "@/lib/types";
+
+/** Aviso push a todos los que están en alguna liga (menos quien lo cargó). */
+async function notifyResult(matchId: string, setterId: string) {
+  try {
+    const admin = createAdminClient();
+    const [{ data: match }, { data: members }] = await Promise.all([
+      admin
+        .from("matches")
+        .select(
+          `match_number, home_score, away_score, home_slot, away_slot,
+           home_team:teams!matches_home_team_id_fkey(name, flag_emoji),
+           away_team:teams!matches_away_team_id_fkey(name, flag_emoji)`
+        )
+        .eq("id", matchId)
+        .maybeSingle(),
+      admin.from("league_members").select("user_id"),
+    ]);
+    const targets = Array.from(
+      new Set((members ?? []).map((m) => m.user_id as string))
+    ).filter((id) => id !== setterId);
+    if (targets.length === 0) return;
+
+    const m = match as unknown as {
+      match_number: number;
+      home_score: number | null;
+      away_score: number | null;
+      home_slot: string | null;
+      away_slot: string | null;
+      home_team: { name: string; flag_emoji: string | null } | null;
+      away_team: { name: string; flag_emoji: string | null } | null;
+    } | null;
+    const home = m?.home_team
+      ? `${m.home_team.flag_emoji ?? ""} ${m.home_team.name}`.trim()
+      : m?.home_slot ?? "Local";
+    const away = m?.away_team
+      ? `${m.away_team.flag_emoji ?? ""} ${m.away_team.name}`.trim()
+      : m?.away_slot ?? "Visitante";
+
+    await sendPushToUsers(targets, {
+      title: "✅ Nuevo resultado",
+      body: `${home} ${m?.home_score ?? ""}-${m?.away_score ?? ""} ${away}`,
+      url: "/dashboard",
+      tag: `result-${matchId}`,
+    });
+  } catch {
+    // best-effort
+  }
+}
 
 /**
  * Carga o corrige el resultado de un partido. Lo puede hacer CUALQUIER usuario
@@ -54,6 +104,8 @@ export async function setMatchResult(input: {
     home_score: homeScore,
     away_score: awayScore,
   });
+
+  await notifyResult(input.matchId, user.id);
 
   revalidatePath("/results");
   revalidatePath("/matches");

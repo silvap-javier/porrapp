@@ -1,4 +1,4 @@
-const CACHE_NAME = "porrapp-v1";
+const CACHE_NAME = "porrapp-v2";
 const STATIC_ASSETS = ["/", "/login", "/register", "/dashboard"];
 
 // Install: cache static assets
@@ -19,6 +19,42 @@ self.addEventListener("activate", (event) => {
     )
   );
   self.clients.claim();
+});
+
+// Push: muestra la notificación recibida del servidor
+self.addEventListener("push", (event) => {
+  let data = { title: "PorrApp", body: "", url: "/dashboard", tag: undefined };
+  try {
+    if (event.data) data = { ...data, ...event.data.json() };
+  } catch {
+    if (event.data) data.body = event.data.text();
+  }
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: "/icons/icon.svg",
+      badge: "/icons/icon.svg",
+      tag: data.tag,
+      data: { url: data.url || "/dashboard" },
+    })
+  );
+});
+
+// Click: enfoca una pestaña existente o abre la URL del aviso
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = (event.notification.data && event.notification.data.url) || "/dashboard";
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+      for (const client of list) {
+        if ("focus" in client) {
+          client.navigate(target);
+          return client.focus();
+        }
+      }
+      return self.clients.openWindow(target);
+    })
+  );
 });
 
 // Fetch: network first, fallback to cache

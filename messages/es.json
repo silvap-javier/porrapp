@@ -62,8 +62,19 @@
     "save": "Guardar",
     "saving": "Guardando…",
     "saved": "Guardado",
+    "notifSection": "Notificaciones push",
     "dangerSection": "Sesión",
     "logout": "Cerrar sesión"
+  },
+  "push": {
+    "loading": "Comprobando…",
+    "unsupported": "Tu navegador no admite notificaciones push.",
+    "denied": "Has bloqueado las notificaciones. Actívalas en los ajustes del navegador.",
+    "offHint": "Recibe avisos de menciones, resultados y nuevos miembros aunque no tengas la app abierta.",
+    "onHint": "Las notificaciones push están activadas en este dispositivo.",
+    "enable": "Activar",
+    "disable": "Desactivar",
+    "busy": "…"
   },
   "dashboard": {
     "title": "Tu porra",

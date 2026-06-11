@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import ProfileForm from "@/components/ProfileForm";
 import LogoutButton from "@/components/LogoutButton";
+import PushToggle from "@/components/PushToggle";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -27,6 +28,11 @@ export default async function SettingsPage() {
         <h2 className="font-semibold text-foreground mb-3">{t("profileSection")}</h2>
         <p className="text-sm text-muted mb-4">{profile?.email}</p>
         <ProfileForm initialName={profile?.name ?? ""} />
+      </section>
+
+      <section className="bg-surface border border-border rounded-2xl p-5 shadow-[var(--shadow-warm)]">
+        <h2 className="font-semibold text-foreground mb-3">{t("notifSection")}</h2>
+        <PushToggle />
       </section>
 
       <section className="bg-surface border border-border rounded-2xl p-5 shadow-[var(--shadow-warm)]">
