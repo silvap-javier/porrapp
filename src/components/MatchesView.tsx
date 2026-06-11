@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import MatchCard from "./MatchCard";
 import { isMatchOpen } from "@/lib/scoring";
+import { formatDay } from "@/lib/format";
 import type { Stage } from "@/lib/types";
 
 type Side = { flag: string; name: string };
@@ -91,6 +92,24 @@ export default function MatchesView({ matches }: { matches: ViewMatch[] }) {
 
   const predicted = visible.filter((m) => m.predHome !== null).length;
 
+  // Agrupa los partidos visibles por día (ordenados por hora de inicio).
+  const days = useMemo(() => {
+    const sorted = [...visible].sort(
+      (a, b) => new Date(a.kickoff_at).getTime() - new Date(b.kickoff_at).getTime()
+    );
+    const out: { key: string; label: string; matches: ViewMatch[] }[] = [];
+    for (const m of sorted) {
+      const key = new Date(m.kickoff_at).toLocaleDateString("es-ES");
+      const last = out[out.length - 1];
+      if (last && last.key === key) last.matches.push(m);
+      else {
+        const label = formatDay(m.kickoff_at);
+        out.push({ key, label: label.charAt(0).toUpperCase() + label.slice(1), matches: [m] });
+      }
+    }
+    return out;
+  }, [visible]);
+
   return (
     <div className="space-y-4">
       {/* Pestañas por fase */}
@@ -139,28 +158,44 @@ export default function MatchesView({ matches }: { matches: ViewMatch[] }) {
         {predicted}/{visible.length} {t("predictedCount")}
       </p>
 
-      {/* Lista */}
-      <div className="space-y-3">
-        {visible.map((m) => (
-          <MatchCard
-            key={m.id}
-            matchId={m.id}
-            home={m.home}
-            away={m.away}
-            kickoffAt={m.kickoff_at}
-            status={m.status}
-            homeScore={m.home_score}
-            awayScore={m.away_score}
-            initialHome={m.predHome}
-            initialAway={m.predAway}
-            venue={m.venue}
-            tag={
-              stage === "group" && group === "all" && m.group_letter
-                ? `${t("group")} ${m.group_letter}`
-                : undefined
-            }
-          />
-        ))}
+      {/* Lista agrupada por fecha */}
+      <div className="space-y-5">
+        {days.map((d) => {
+          const dayPending = d.matches.filter(isPending).length;
+          return (
+            <div key={d.key} className="space-y-3">
+              <div className="flex items-center gap-2 sticky top-14 z-10 bg-background/95 backdrop-blur-sm py-1.5">
+                <h3 className="text-sm font-semibold text-foreground">{d.label}</h3>
+                {dayPending > 0 && (
+                  <span className="text-[11px] font-medium text-accent bg-accent/10 px-2 py-0.5 rounded-full">
+                    {dayPending} {t("pending")}
+                  </span>
+                )}
+                <span className="flex-1 h-px bg-border" />
+              </div>
+              {d.matches.map((m) => (
+                <MatchCard
+                  key={m.id}
+                  matchId={m.id}
+                  home={m.home}
+                  away={m.away}
+                  kickoffAt={m.kickoff_at}
+                  status={m.status}
+                  homeScore={m.home_score}
+                  awayScore={m.away_score}
+                  initialHome={m.predHome}
+                  initialAway={m.predAway}
+                  venue={m.venue}
+                  tag={
+                    stage === "group" && group === "all" && m.group_letter
+                      ? `${t("group")} ${m.group_letter}`
+                      : undefined
+                  }
+                />
+              ))}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
