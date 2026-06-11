@@ -177,6 +177,8 @@
   },
   "porrita": {
     "predictions": "predicciones",
+    "byGroup": "Por grupo",
+    "byDate": "Por fecha",
     "group": "Grupo",
     "matchesLabel": "Partidos",
     "pending": "pendientes",

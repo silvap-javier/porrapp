@@ -5,6 +5,7 @@ import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { savePrediction } from "@/lib/prediction-actions";
 import { isMatchOpen, scoreMatch } from "@/lib/scoring";
+import { formatDay } from "@/lib/format";
 import { STAGE_LABELS, type Stage } from "@/lib/types";
 
 type Side = { flag: string; name: string };
@@ -46,6 +47,25 @@ export default function LaPorritaView({
   });
   const [expanded, setExpanded] = useState<Set<string>>(new Set(["A"]));
   const [active, setActive] = useState<LMatch | null>(null);
+  const [view, setView] = useState<"group" | "date">("group");
+
+  // Agrupa TODOS los partidos por día (orden cronológico) para la vista "Por fecha".
+  const days = useMemo(() => {
+    const sorted = [...matches].sort(
+      (a, b) => new Date(a.kickoffAt).getTime() - new Date(b.kickoffAt).getTime()
+    );
+    const out: { key: string; label: string; matches: LMatch[] }[] = [];
+    for (const m of sorted) {
+      const key = new Date(m.kickoffAt).toLocaleDateString("es-ES");
+      const last = out[out.length - 1];
+      if (last && last.key === key) last.matches.push(m);
+      else {
+        const label = formatDay(m.kickoffAt);
+        out.push({ key, label: label.charAt(0).toUpperCase() + label.slice(1), matches: [m] });
+      }
+    }
+    return out;
+  }, [matches]);
 
   const total = matches.length;
   const predCount = matches.filter((m) => preds[m.id]).length;
@@ -92,8 +112,52 @@ export default function LaPorritaView({
         </div>
       </div>
 
-      {/* Grupos */}
-      {groups.map((g) => {
+      {/* Conmutador de vista */}
+      <div className="flex gap-1.5 bg-surface border border-border rounded-full p-1">
+        {(["group", "date"] as const).map((v) => (
+          <button
+            key={v}
+            onClick={() => setView(v)}
+            className={`flex-1 text-sm py-1.5 rounded-full font-medium transition-colors ${
+              view === v ? "bg-primary text-white" : "text-muted hover:text-foreground"
+            }`}
+          >
+            {t(v === "group" ? "byGroup" : "byDate")}
+          </button>
+        ))}
+      </div>
+
+      {/* Vista por fecha */}
+      {view === "date" &&
+        days.map((d) => {
+          const dayPending = pendingCount(d.matches);
+          const dayDone = d.matches.filter((m) => preds[m.id]).length;
+          return (
+            <div key={d.key} className="rounded-2xl overflow-hidden border border-border">
+              <div className="flex items-center justify-between bg-gradient-to-r from-primary to-primary-dark px-4 py-2.5">
+                <span className="font-bold text-white">{d.label}</span>
+                <span className="flex items-center gap-2">
+                  {dayPending > 0 && (
+                    <span className="text-[11px] font-semibold text-white/90 bg-white/15 px-2 py-0.5 rounded-full">
+                      {dayPending} {t("pending")}
+                    </span>
+                  )}
+                  <span className="text-xs font-semibold text-white/90 bg-white/15 px-2 py-0.5 rounded-full">
+                    ✎ {dayDone}/{d.matches.length}
+                  </span>
+                </span>
+              </div>
+              <div className="bg-surface">
+                {d.matches.map((m) => (
+                  <MatchRow key={m.id} m={m} pred={preds[m.id]} onOpen={setActive} />
+                ))}
+              </div>
+            </div>
+          );
+        })}
+
+      {/* Vista por grupo */}
+      {view === "group" && groups.map((g) => {
         const gm = matches.filter((m) => m.group === g);
         const done = gm.filter((m) => preds[m.id]).length;
         const jornadas = Array.from(new Set(gm.map((m) => m.jornada))).sort((a, b) => a - b);
@@ -158,7 +222,7 @@ export default function LaPorritaView({
       })}
 
       {/* Eliminatorias */}
-      {koStages.map((s) => {
+      {view === "group" && koStages.map((s) => {
         const sm = matches.filter((m) => m.stage === s);
         const done = sm.filter((m) => preds[m.id]).length;
         const isOpen = expanded.has(s);
