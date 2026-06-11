@@ -1,12 +1,25 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
-import { savePrediction } from "@/lib/prediction-actions";
+import { savePrediction, getMatchPredictions, type RivalPrediction } from "@/lib/prediction-actions";
 import { isMatchOpen, scoreMatch } from "@/lib/scoring";
 import { formatDay } from "@/lib/format";
-import { STAGE_LABELS, type Stage } from "@/lib/types";
+import { LOCK_MINUTES, STAGE_LABELS, type Stage } from "@/lib/types";
+
+/** Etiqueta "cierra en Xh Ym" para un partido abierto cuyo cierre es inminente (<24 h). */
+function lockLabel(kickoffAt: string, now: number): string | null {
+  const lockAt = new Date(kickoffAt).getTime() - LOCK_MINUTES * 60 * 1000;
+  const ms = lockAt - now;
+  if (ms <= 0 || ms > 24 * 60 * 60 * 1000) return null;
+  const mins = Math.floor(ms / 60000);
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  if (h > 0) return `cierra en ${h}h ${m}m`;
+  if (m > 0) return `cierra en ${m} min`;
+  return "cierra en <1 min";
+}
 
 type Side = { flag: string; name: string };
 
@@ -48,6 +61,18 @@ export default function LaPorritaView({
   const [expanded, setExpanded] = useState<Set<string>>(new Set(["A"]));
   const [active, setActive] = useState<LMatch | null>(null);
   const [view, setView] = useState<"group" | "date">("group");
+
+  // Reloj que avanza para la cuenta atrás de cierre (sin Date.now en render).
+  const [now, setNow] = useState(0);
+  useEffect(() => {
+    const tick = () => setNow(new Date().getTime());
+    const t0 = setTimeout(tick, 0);
+    const id = setInterval(tick, 30000);
+    return () => {
+      clearTimeout(t0);
+      clearInterval(id);
+    };
+  }, []);
 
   // Agrupa TODOS los partidos por día (orden cronológico) para la vista "Por fecha".
   const days = useMemo(() => {
@@ -149,7 +174,7 @@ export default function LaPorritaView({
               </div>
               <div className="bg-surface">
                 {d.matches.map((m) => (
-                  <MatchRow key={m.id} m={m} pred={preds[m.id]} onOpen={setActive} />
+                  <MatchRow key={m.id} m={m} pred={preds[m.id]} now={now} onOpen={setActive} />
                 ))}
               </div>
             </div>
@@ -211,7 +236,7 @@ export default function LaPorritaView({
                     {gm
                       .filter((m) => m.jornada === j)
                       .map((m) => (
-                        <MatchRow key={m.id} m={m} pred={preds[m.id]} onOpen={setActive} />
+                        <MatchRow key={m.id} m={m} pred={preds[m.id]} now={now} onOpen={setActive} />
                       ))}
                   </div>
                 ))}
@@ -247,7 +272,7 @@ export default function LaPorritaView({
                   <div className="px-4 pt-2 text-[11px] text-secondary">{pend} {t("pending")}</div>
                 )}
                 {sm.map((m) => (
-                  <MatchRow key={m.id} m={m} pred={preds[m.id]} onOpen={setActive} />
+                  <MatchRow key={m.id} m={m} pred={preds[m.id]} now={now} onOpen={setActive} />
                 ))}
               </div>
             )}
@@ -259,6 +284,7 @@ export default function LaPorritaView({
         <PredictionSheet
           match={active}
           initial={preds[active.id]}
+          now={now}
           onClose={() => setActive(null)}
           onSaved={onSaved}
         />
@@ -270,15 +296,18 @@ export default function LaPorritaView({
 function MatchRow({
   m,
   pred,
+  now,
   onOpen,
 }: {
   m: LMatch;
   pred?: Pred;
+  now: number;
   onOpen: (m: LMatch) => void;
 }) {
   const open = isMatchOpen(m.kickoffAt, m.status);
   const finished = m.status === "finished" && m.homeScore !== null && m.awayScore !== null;
   const points = finished && pred ? scoreMatch(pred.h, pred.a, m.homeScore!, m.awayScore!) : null;
+  const closing = open && now ? lockLabel(m.kickoffAt, now) : null;
 
   return (
     <button
@@ -286,7 +315,12 @@ function MatchRow({
       disabled={!open && !finished && !pred}
       className="w-full flex items-center gap-2 px-3 py-2.5 border-t border-border/60 disabled:opacity-60 active:bg-surface-hover transition-colors"
     >
-      <span className="text-[11px] text-muted w-7 flex-shrink-0 text-left">M{m.matchNumber}</span>
+      <span className="text-[11px] text-muted w-7 flex-shrink-0 text-left">
+        M{m.matchNumber}
+        {closing && (
+          <span className="block text-[9px] text-accent font-medium leading-tight">{closing}</span>
+        )}
+      </span>
 
       <span className="flex-1 flex items-center justify-end gap-1.5 min-w-0">
         <span className="text-sm text-foreground truncate text-right">{m.home.name}</span>
@@ -343,11 +377,13 @@ const QUICK: [number, number][] = [
 function PredictionSheet({
   match,
   initial,
+  now,
   onClose,
   onSaved,
 }: {
   match: LMatch;
   initial?: Pred;
+  now: number;
   onClose: () => void;
   onSaved: (id: string, h: number, a: number) => void;
 }) {
@@ -355,10 +391,25 @@ function PredictionSheet({
   const tErr = useTranslations("errors");
   const router = useRouter();
   const open = isMatchOpen(match.kickoffAt, match.status);
+  const closing = open && now ? lockLabel(match.kickoffAt, now) : null;
+  const finished = match.status === "finished" && match.homeScore !== null && match.awayScore !== null;
   const [h, setH] = useState(initial?.h?.toString() ?? "");
   const [a, setA] = useState(initial?.a?.toString() ?? "");
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
+
+  // Pronósticos de la peña (solo cuando el partido ya está cerrado).
+  const [rivals, setRivals] = useState<RivalPrediction[] | null>(null);
+  useEffect(() => {
+    if (open) return;
+    let active = true;
+    getMatchPredictions(match.id).then((rows) => {
+      if (active) setRivals(rows);
+    });
+    return () => {
+      active = false;
+    };
+  }, [open, match.id]);
 
   const save = () => {
     setError("");
@@ -392,8 +443,9 @@ function PredictionSheet({
           <button onClick={onClose} className="text-sm text-muted hover:text-foreground">
             {t("cancel")}
           </button>
-          <span className="text-sm font-semibold text-foreground">
+          <span className="text-sm font-semibold text-foreground flex flex-col items-center leading-tight">
             {t("prediction")} M{match.matchNumber}
+            {closing && <span className="text-[10px] font-medium text-accent">{closing}</span>}
           </span>
           <button
             onClick={save}
@@ -468,6 +520,45 @@ function PredictionSheet({
         )}
 
         {error && <p className="text-sm text-red-600 mt-3 text-center">{error}</p>}
+
+        {/* Pronósticos de la peña (partido cerrado) */}
+        {!open && rivals !== null && (
+          <div className="mt-5 border-t border-border pt-4">
+            <h3 className="text-sm font-semibold text-foreground mb-2">{t("rivals")}</h3>
+            {rivals.length === 0 ? (
+              <p className="text-sm text-muted">{t("noRivals")}</p>
+            ) : (
+              <ul className="space-y-1.5">
+                {[...rivals]
+                  .map((r) => ({
+                    ...r,
+                    pts: finished ? scoreMatch(r.home, r.away, match.homeScore!, match.awayScore!) : null,
+                  }))
+                  .sort((x, y) => (y.pts ?? 0) - (x.pts ?? 0) || x.name.localeCompare(y.name))
+                  .map((r) => (
+                    <li
+                      key={r.userId}
+                      className="flex items-center gap-2 text-sm bg-background rounded-lg px-3 py-1.5"
+                    >
+                      <span className="flex-1 truncate text-foreground">{r.name}</span>
+                      <span className="font-bold tabular-nums text-foreground">
+                        {r.home}–{r.away}
+                      </span>
+                      {r.pts !== null && (
+                        <span
+                          className={`text-xs font-semibold w-8 text-right ${
+                            r.pts > 0 ? "text-primary" : "text-muted"
+                          }`}
+                        >
+                          +{r.pts}
+                        </span>
+                      )}
+                    </li>
+                  ))}
+              </ul>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

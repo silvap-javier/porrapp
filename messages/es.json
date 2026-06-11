@@ -179,6 +179,8 @@
     "predictions": "predicciones",
     "byGroup": "Por grupo",
     "byDate": "Por fecha",
+    "rivals": "Pronósticos de la peña",
+    "noRivals": "Nadie de tus ligas pronosticó este partido.",
     "group": "Grupo",
     "matchesLabel": "Partidos",
     "pending": "pendientes",
