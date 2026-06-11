@@ -44,10 +44,35 @@ export default function ReglasPage() {
         <h2 className="text-lg font-semibold text-foreground px-1">Picks de torneo</h2>
         <Rule pts="10" title="Campeón" body="Aciertas la selección que gana el Mundial." />
         <Rule pts="5" title="Subcampeón" body="Aciertas el finalista que pierde la final." />
-        <Rule pts="5" title="Goleador" body="Aciertas el máximo goleador del torneo." />
+        <Rule pts="5" title="Goleador" body="Aciertas el máximo goleador del torneo (Bota de Oro)." />
         <p className="text-xs text-muted px-1">
-          Los picks de torneo se cierran cuando arranca el Mundial.
+          Los picks de torneo se cierran 60 minutos antes del primer partido del Mundial.
         </p>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold text-foreground px-1">Primeros y segundos de grupo</h2>
+        <Rule pts="3" title="1º del grupo" body="Aciertas qué selección queda primera en un grupo. 3 puntos por grupo." />
+        <Rule pts="2" title="2º del grupo" body="Aciertas qué selección queda segunda en un grupo. 2 puntos por grupo." />
+        <p className="text-xs text-muted px-1">
+          Se resuelven cuando el grupo termina todos sus partidos. El orden sale de la clasificación real (puntos, diferencia de goles y goles a favor).
+        </p>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold text-foreground px-1">Pichichi de grupo</h2>
+        <Rule pts="3" title="Goleador del grupo" body="Aciertas el máximo goleador de cada grupo. 3 puntos por grupo." />
+        <p className="text-xs text-muted px-1">
+          También son picks: se cierran 60 minutos antes del primer partido.
+        </p>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold text-foreground px-1">Tu puntuación total</h2>
+        <div className="bg-surface border border-border rounded-2xl p-4 text-sm text-foreground leading-relaxed">
+          <p className="font-medium">Total = partidos + picks de torneo + primeros/segundos de grupo + pichichis de grupo.</p>
+          <p className="text-muted mt-1.5">Todo se suma en un único marcador, igual en todas tus ligas.</p>
+        </div>
       </section>
 
       <section className="space-y-3">
@@ -57,6 +82,7 @@ export default function ReglasPage() {
           <li>📝 <strong>Una boleta:</strong> tu pronóstico es único y <strong>cuenta en todas tus ligas</strong>. No rellenas una boleta por liga.</li>
           <li>🏆 <strong>Ranking:</strong> ganas por la suma total de puntos. En caso de empate, manda quien tenga más <strong>aciertos exactos</strong>.</li>
           <li>✅ <strong>Resultados:</strong> cualquiera puede cargar el marcador real de un partido; queda registrado quién lo hizo, así que jugamos limpio.</li>
+          <li>💰 <strong>Bote:</strong> si tu liga tiene cuota, el bote (cuota × miembros) es solo informativo. PorrApp no gestiona pagos.</li>
         </ul>
       </section>
     </div>
